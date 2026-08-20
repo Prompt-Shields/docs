@@ -1,0 +1,121 @@
+---
+title: "Troubleshooting"
+description: "The failures that actually happen, across all three clients, and how to clear them."
+icon: "wrench"
+---
+
+Ordered roughly by how often they land in a helpdesk queue.
+
+## Triage in three questions
+
+Before anything else, establish these. They resolve the large majority of reports on their own:
+
+<Steps>
+  <Step title="Is the user signed in?">
+    None of the clients do anything at all until the user has authenticated. The desktop agents cannot even enable monitoring while signed out.
+  </Step>
+  <Step title="Is monitoring switched on?">
+    The desktop agents ship with monitoring **off** by default, every install. A user who never flipped the toggle sees nothing and reasonably concludes the tool is broken.
+  </Step>
+  <Step title="Is the user on a supported surface?">
+    The browser extension only activates on its allow-listed AI sites. Native desktop apps need the desktop agent.
+  </Step>
+</Steps>
+
+## Browser extension
+
+<AccordionGroup>
+  <Accordion title="The Analyze affordance never appears">
+    Confirm the site is in the extension's host permission list — see [Browser extension](/deploy/browser-extension). If the site is supported, check that the extension is enabled for that profile; users with multiple Chrome profiles routinely test in the profile that does not have it.
+  </Accordion>
+  <Accordion title="Signed out repeatedly, or sign-in loops">
+    Token handling lives entirely in the background service worker. Service workers are terminated aggressively by the browser; a network interruption during a refresh can leave a stale token. Signing out and back in clears it. If it recurs across many users, check reachability to your Auth0 tenant from the corporate network.
+  </Accordion>
+  <Accordion title="The extension disappeared after a policy push">
+    A force-install policy replaces a manually installed copy. This is normal, but user settings tied to the old installation may not carry over. Have the user sign in again.
+  </Accordion>
+  <Accordion title="Works in Chrome, not in Edge">
+    They are separate builds from separate store listings. Confirm the Edge build was deployed and that your managed-policy entry uses the Edge Add-ons update URL, not the Chrome Web Store one.
+  </Accordion>
+</AccordionGroup>
+
+## macOS agent
+
+<AccordionGroup>
+  <Accordion title="Accessibility is granted but nothing happens">
+    The most common macOS issue by a wide margin. macOS sometimes holds a stale permission record after an app update. Go to **System Settings → Privacy & Security → Accessibility**, remove PromptShields, add it back, and restart the app. If that fails, restart the Mac to clear the accessibility daemon cache.
+  </Accordion>
+  <Accordion title="The permission prompt never appeared">
+    The prompt is only triggered when the user enables monitoring while signed in. If they are signed out, or never touched the toggle, macOS is never asked. Walk them through the toggle first.
+  </Accordion>
+  <Accordion title="Local history is empty or errors">
+    A missing or rotated local encryption key. Recreating it fixes the error but **invalidates all locally encrypted data** on that device — local history is lost. Server-side history is unaffected.
+  </Accordion>
+  <Accordion title="The overlay appears in the wrong position">
+    The overlay is placed using geometry reported by the Accessibility API. Applications that draw custom, non-standard text controls can report it inaccurately. Capture the application name and version and report it.
+  </Accordion>
+</AccordionGroup>
+
+## Windows agent
+
+<AccordionGroup>
+  <Accordion title="Sign-in window is blank or never opens">
+    The **WebView2 Runtime** is missing. Auth0 sign-in is hosted in WebView2, so without it users can install but never authenticate. Install the Evergreen Runtime. This is the single most common Windows deployment failure — check it first on any older image.
+  </Accordion>
+  <Accordion title="Sign-in completes but the app never returns">
+    The `prompt-shields://` protocol handler was not registered or is blocked by policy. Allow-list the scheme and confirm registration survived your packaging method.
+  </Accordion>
+  <Accordion title="A second instance will not launch">
+    Intended behaviour — a named mutex enforces a single instance. If the app seems gone but will not relaunch, look for an orphaned process in Task Manager and end it.
+  </Accordion>
+  <Accordion title="History is empty on a different machine">
+    The local database lives at `%LocalAppData%\PromptShields\promptshields.db`, and `%LocalAppData%` does not roam. Users moving between machines see empty local history on each. Server-side history is unaffected.
+  </Accordion>
+  <Accordion title="No suggestions in one specific application">
+    Some applications draw custom text controls that do not expose a UI Automation text pattern. Report the application and version so coverage can be assessed.
+  </Accordion>
+</AccordionGroup>
+
+## Console and sign-in
+
+<AccordionGroup>
+  <Accordion title="not_provisioned when signing in with Microsoft">
+    Expected when self-serve signup is disabled and the user was never provisioned. Invite them into the tenant and retry. See [Identity and access](/admin/identity-and-access).
+  </Accordion>
+  <Accordion title="Redirect URI mismatch">
+    The redirect URI in your Entra app registration must match the configured value exactly — scheme, host, port, and path.
+  </Accordion>
+  <Accordion title="A user signed in but sees almost nothing">
+    Users auto-joined into an existing tenant get the analyst role. Check their role assignment if they expect administrative views.
+  </Accordion>
+</AccordionGroup>
+
+## Coverage gaps
+
+<AccordionGroup>
+  <Accordion title="MDM says installed, but the console shows no check-in">
+    The policy applied but the client never phoned home. Usual causes: the device is offline or offboarded, the user never completed sign-in, or on macOS the Accessibility permission was never granted. Work this list from the console's offline-agents view.
+  </Accordion>
+  <Accordion title="Detections stopped for a group of users">
+    Check whether a policy was auto-demoted by the watchdog — a sustained false-positive rate above your threshold reverts a Strict policy to Guideline, which stops enforcement while continuing to observe. The policy's History tab records the watchdog as the actor. See [Policies](/admin/policies).
+  </Accordion>
+  <Accordion title="An AI tool your users rely on is not covered">
+    Coverage on the browser side is an explicit allow-list. Send the domain so it can be evaluated for addition. In the meantime, the desktop agents cover it if the tool is used through a native application.
+  </Accordion>
+</AccordionGroup>
+
+## What to include when you escalate
+
+The more of this you gather up front, the faster it resolves:
+
+- Client and version — browser extension, macOS agent, or Windows agent
+- Operating system and build
+- The application or site where the problem occurs
+- Whether the user is signed in, and whether monitoring is enabled
+- On macOS, the current monitoring state: `disabled`, `enabled`, `paused`, or `awaitingPermissions`
+- Whether the device is MDM-enrolled, and whether the client was force-installed
+- Timestamp of a specific failed attempt, so it can be matched against the activity log
+
+<Warning>
+Never include the prompt text in a support ticket. If a detection behaved unexpectedly, describe the *category* and the shape of the data — "a 16-digit number in a sentence about invoicing" — rather than pasting the real content.
+</Warning>

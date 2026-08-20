@@ -1,0 +1,107 @@
+---
+title: "macOS agent"
+description: "Deploy the PromptShields menu bar app — requirements, the Accessibility permission flow, and what it stores."
+icon: "apple"
+---
+
+The macOS agent extends PromptShields beyond the browser. It runs in the menu bar and uses the system Accessibility API to observe the focused text field in **any** application — the ChatGPT desktop app, Slack, Mail, Word — then shows a floating suggestion overlay near that field.
+
+## Requirements
+
+| | |
+| --- | --- |
+| macOS | 14.0 (Sonoma) or later |
+| Architecture | Apple Silicon and Intel |
+| Required permission | Accessibility (Privacy & Security) |
+| Authentication | Auth0, with automatic token refresh |
+| Credential storage | macOS Keychain |
+
+## The Accessibility permission
+
+This is the part of the deployment that needs the most communication, because macOS requires the user to grant it by hand and the app is inert until they do.
+
+The flow is deliberately conservative:
+
+<Steps>
+  <Step title="The app starts with monitoring OFF">
+    Installing the agent does not start any observation. This is the default state, every time.
+  </Step>
+  <Step title="The user signs in">
+    Monitoring cannot be enabled at all until the user is authenticated.
+  </Step>
+  <Step title="The user enables monitoring">
+    From the toggle in the Control Panel. If Accessibility permission is already granted, monitoring starts immediately.
+  </Step>
+  <Step title="macOS prompts for permission">
+    If not granted, the system prompt appears. The app shows a banner with an **Open System Settings** button.
+  </Step>
+  <Step title="The user approves">
+    **System Settings → Privacy & Security → Accessibility**, then add PromptShields to the list.
+  </Step>
+  <Step title="Monitoring starts automatically">
+    The app detects the grant and begins monitoring without a restart.
+  </Step>
+</Steps>
+
+<Warning>
+Accessibility permission on macOS **cannot be granted silently by MDM** on behalf of the user for a third-party app in the general case. Plan for a short user-facing instruction — a one-paragraph note with a screenshot is usually enough — and expect a support ticket rate proportional to how little you explain it.
+</Warning>
+
+### Monitoring states
+
+The menu bar reflects one of four states. Knowing these makes triage much faster:
+
+| State | Meaning |
+| --- | --- |
+| `disabled` | Monitoring is off. This is the default. |
+| `enabled` | Actively monitoring focused text fields. |
+| `paused` | Temporarily suspended — for example, the screen is locked. |
+| `awaitingPermissions` | Waiting for the user to grant Accessibility permission. |
+
+A user reporting "it isn't doing anything" is almost always in `disabled` or `awaitingPermissions`.
+
+## Configuration
+
+Two settings determine which backend and identity provider the agent talks to. These are baked into the build, so confirm them with whoever produced your package:
+
+- **API endpoint** — the PromptShields API base URL the agent calls.
+- **Auth0** — the tenant domain and client ID used for sign-in.
+
+If you operate more than one environment, verify you are deploying the production build before it reaches users.
+
+## What it stores on the device
+
+| Item | Where | Protection |
+| --- | --- | --- |
+| Credentials and tokens | macOS Keychain | `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` — not readable before first unlock, does not sync off-device |
+| Encryption key | macOS Keychain | Used for the local database |
+| Local data (profile, suggestions, teams, preferences) | SwiftData store | Sensitive fields encrypted with **AES-256-GCM** |
+| Service and account identifiers | — | Hashed with SHA-512 |
+
+Encryption failures degrade gracefully rather than crashing the app, so a corrupted key surfaces as missing local history rather than a crash loop.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Accessibility is granted but nothing happens">
+    macOS occasionally holds a stale permission record after an app update. In **System Settings → Privacy & Security → Accessibility**, remove PromptShields from the list, add it back, then restart the app. If it still fails, restart the Mac — this clears the accessibility daemon's cache.
+  </Accordion>
+  <Accordion title="The user is repeatedly signed out">
+    Check network reachability to the API endpoint and to your Auth0 tenant. The agent refreshes tokens automatically on a 401 or 403; persistent failures raise a `tokenRefreshFailed` condition. Clearing the Keychain entries and re-authenticating resolves a corrupted token state.
+  </Accordion>
+  <Accordion title="Local history is empty or errors on read">
+    This indicates a missing or rotated encryption key. Recreating the key resolves it, but **invalidates all previously encrypted local data** — history stored only on that device is lost. Server-side history is unaffected.
+  </Accordion>
+  <Accordion title="The overlay appears in the wrong place">
+    The overlay positions itself relative to the focused element as reported by the Accessibility API. Applications that draw their own non-standard text fields may report inaccurate geometry. Report the specific application so it can be added to the compatibility list.
+  </Accordion>
+</AccordionGroup>
+
+## What to tell your users
+
+A short note that covers these four points prevents most tickets:
+
+1. PromptShields lives in the menu bar; it starts **off**.
+2. Sign in, then flip the toggle to turn monitoring on.
+3. macOS will ask for Accessibility permission — this is expected, and required for the app to see text fields.
+4. It suggests; it never changes your text unless you accept.

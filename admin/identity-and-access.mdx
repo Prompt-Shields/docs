@@ -1,0 +1,101 @@
+---
+title: "Identity and access"
+description: "Microsoft Entra ID SSO, tenant mapping, and how users get provisioned."
+icon: "key"
+---
+
+Getting identity right early matters more than it looks. Until users are authenticated against your directory, console activity is attributed to accounts rather than to people, and your reports lose most of their value.
+
+## Three ways to get an account
+
+| Method | What happens |
+| --- | --- |
+| **Password sign-up** | Creates a new tenant with the signer as tenant admin, on a 14-day trial |
+| **Invite** | An existing admin invites a user into an existing tenant |
+| **Microsoft Entra ID SSO** | "Sign in with Microsoft" — the option to use for any real deployment |
+
+Both the login and sign-up pages offer the Microsoft button.
+
+## How Entra ID SSO works
+
+The browser is sent to Microsoft to authorize, and the callback exchanges the authorization code over the **back channel**. The id-token's claims are validated — issuer, audience, nonce, expiry — and three are read:
+
+- `oid` — the Entra object ID, the stable identifier for the user
+- `email`
+- `tid` — your Azure directory ID
+
+The session is then handed to the application through a **one-time code**, so no tokens ever appear in a URL.
+
+<Note>
+Users who sign in through SSO have no local password, and their email is treated as verified because Microsoft asserts it.
+</Note>
+
+## Tenant mapping
+
+<Warning>
+**One Azure directory maps to at most one PromptShields tenant.** The directory ID is stored uniquely against the tenant, which means colleagues signing in from the same Entra directory automatically land in the same workspace rather than creating parallel silos.
+</Warning>
+
+This is the rule that prevents the most common failure mode in self-serve tools: three departments each spinning up their own disconnected workspace.
+
+## Provisioning modes
+
+Whether an unrecognised user can create an account is controlled by a single setting, **`SSO_SELF_SERVE_SIGNUP`**, which defaults to **off**.
+
+| Situation | Self-serve OFF (login-only) | Self-serve ON |
+| --- | --- | --- |
+| Identity already linked (matched on `oid`) | Sign in | Sign in |
+| Existing user, same email, not yet linked | Link the identity, sign in | Link the identity, sign in |
+| Unknown user, **first** from your directory | **Rejected** — `not_provisioned` | Creates the tenant, user becomes tenant admin, 14-day trial starts |
+| Unknown user, directory already mapped to a tenant | **Rejected** | Joins that tenant as a member (analyst role) |
+
+Email matching runs **before** any just-in-time creation, so a user whose email already exists always links to that existing account. You cannot accidentally end up with a duplicate user or a second tenant for the same person.
+
+### Which mode should you use?
+
+<CardGroup cols={2}>
+  <Card title="Login-only (default)" icon="lock">
+    Users must be provisioned by an admin first. Unknown identities are rejected outright. **Use this for any controlled enterprise deployment** — it means nobody joins your tenant without you putting them there.
+  </Card>
+  <Card title="Self-serve" icon="user-plus">
+    Anyone in your Entra directory can sign in and be auto-joined to your tenant as an analyst. Convenient for a fast pilot; less appropriate once the deployment is real.
+  </Card>
+</CardGroup>
+
+## What your Entra administrator needs to configure
+
+The integration uses a multi-tenant Entra app registration. Your side of the configuration is:
+
+- **Redirect URI** — must exactly match the value configured in PromptShields. A mismatch is the single most common SSO failure.
+- **Consent** — an administrator grants consent for the application in your directory.
+- **Assignment** — if you restrict application assignment, assign the users or groups who should have access.
+
+<Warning>
+The id-token is retrieved over TLS directly from Microsoft and its claims are validated, but its RS256 signature is not yet re-verified against the JWKS endpoint. This is a known hardening item on the roadmap. It is noted here so your security review sees it from us rather than discovering it later.
+</Warning>
+
+## Troubleshooting SSO
+
+<AccordionGroup>
+  <Accordion title="not_provisioned on sign-in">
+    Expected behaviour when self-serve signup is off and the user has never been provisioned. Invite the user into the tenant, then have them retry.
+  </Accordion>
+  <Accordion title="Redirect URI mismatch">
+    The redirect URI in the Entra app registration must match the configured value character for character, including scheme, host, port, and trailing path.
+  </Accordion>
+  <Accordion title="A colleague ended up in a different workspace">
+    This should not happen for two users in the same Entra directory, since the directory ID is unique per tenant. If it did, the second account was almost certainly created through password sign-up rather than SSO. Check how the account was originally created.
+  </Accordion>
+  <Accordion title="A user signed in but sees nothing">
+    Users provisioned by joining an existing tenant land in the analyst role. Check their assigned role if they expect administrative views.
+  </Accordion>
+</AccordionGroup>
+
+## Roles
+
+| Role | Typical holder |
+| --- | --- |
+| **Tenant admin** | The person who created the tenant; full administrative access |
+| **Analyst** | Default for users auto-joined into an existing tenant |
+
+Role checks are enforced at the API layer, not merely hidden in the interface.

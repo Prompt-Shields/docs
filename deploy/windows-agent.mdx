@@ -1,0 +1,126 @@
+---
+title: "Windows agent"
+description: "Deploy the PromptShields Windows Assistant — prerequisites, MSIX packaging, and configuration."
+icon: "windows"
+---
+
+The Windows agent is a WPF desktop application that runs in the system tray. It uses **UI Automation** to detect text fields across any Windows application, and shows a floating overlay with suggestions near the active field.
+
+## Requirements
+
+| | |
+| --- | --- |
+| OS | Windows 10 build 18362 or later, or Windows 11 |
+| Runtime | .NET 8.0 |
+| Required component | Microsoft Edge WebView2 Runtime |
+| Authentication | Auth0 (OIDC), via embedded WebView2 |
+| Packaging | MSIX, for Microsoft Store or line-of-business distribution |
+
+<Warning>
+**WebView2 is a hard prerequisite.** The Auth0 sign-in window is hosted in WebView2; without the runtime present, users can install the app but cannot log in. WebView2 ships with Windows 11 and current Windows 10 builds, but verify it on older images and add the Evergreen Bootstrapper to your deployment if it is missing.
+</Warning>
+
+## How it runs
+
+<Steps>
+  <Step title="Startup">
+    The app initialises its dependency-injection host, enforces a single instance using a named mutex, starts a named-pipe server for intra-process signalling, and shows the system tray icon.
+  </Step>
+  <Step title="Authentication">
+    The user signs in through Auth0 in a WebView2 window. Tokens are written to **Windows Credential Manager**.
+  </Step>
+  <Step title="Monitoring">
+    Once the user activates monitoring, `UIAutomationManager` polls for the focused text field at 100 ms intervals.
+  </Step>
+  <Step title="Detection">
+    `TextFieldDetector` identifies editable elements and raises focus and selection-change events.
+  </Step>
+  <Step title="Suggestion">
+    `SuggestionService` sends the selected text to the PromptShields API for analysis.
+  </Step>
+  <Step title="Overlay">
+    `OverlayWindowManager` displays the result in a floating window near the active field.
+  </Step>
+  <Step title="Application">
+    On accept, `TextInjector` writes the revised text back into the target element.
+  </Step>
+</Steps>
+
+Because it works through UI Automation rather than a browser hook, the agent covers native applications the browser extension cannot reach.
+
+## Configuration
+
+Configuration is environment-specific and selected at build time:
+
+| Build configuration | Settings file | Use case |
+| --- | --- | --- |
+| `Dev_Debug` / `Dev_Release` | `appsettings.Development.json` | Development |
+| `Prod_Debug` / `Prod_Release` | `appsettings.Production.json` | Production |
+| `Debug` / `Release` | `appsettings.json` | Default / fallback |
+
+Each settings file controls:
+
+- **`AppSettings.BaseUrl`** — the PromptShields API endpoint
+- **`Auth0`** — domain, client ID, audience, and redirect URI
+- **Analytics** — enable or disable Google Analytics, PostHog, and Firebase
+- **Logging** — log level
+
+The build system excludes the opposite environment's settings file from the output, so a production package does not carry development configuration.
+
+<Note>
+If your organisation prohibits third-party analytics on managed endpoints, request a production build with the analytics providers disabled. This is a settings-file change, not a code change.
+</Note>
+
+## Custom URI scheme
+
+The installer registers a protocol handler used for deep links:
+
+```
+prompt-shields://callback    — Auth0 authentication callback
+prompt-shields://billing     — subscription management redirect
+```
+
+If you restrict protocol-handler registration by policy, allow-list `prompt-shields://` or sign-in will fail to complete.
+
+## What it stores on the device
+
+| Item | Location | Protection |
+| --- | --- | --- |
+| Credentials and tokens | Windows Credential Manager | DPAPI-encrypted, per-user |
+| Local database | `%LocalAppData%\PromptShields\promptshields.db` | SQLite via Entity Framework Core |
+| Contents | Suggestion history, user preferences, profile data | — |
+
+Roaming-profile environments should be aware that `%LocalAppData%` does not roam; a user moving between machines will see empty local history on each new device. Server-side history is unaffected.
+
+## Technology stack
+
+For your application-inventory and change-approval records:
+
+| Category | Technology |
+| --- | --- |
+| Language / framework | C# 12 on .NET 8.0, Windows 10 SDK |
+| UI | WPF |
+| Database | SQLite via Entity Framework Core 9 |
+| Authentication | Auth0 (OIDC) |
+| Embedded browser | Microsoft WebView2 |
+| DI / hosting | Microsoft.Extensions.DependencyInjection / Hosting |
+| System tray | Hardcodet.NotifyIcon.Wpf |
+| Credential storage | Windows Credential Manager + DPAPI |
+| Packaging | MSIX |
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Sign-in window is blank or never opens">
+    The WebView2 Runtime is missing or blocked. Install the Evergreen Runtime and retry. This is by far the most common Windows deployment failure.
+  </Accordion>
+  <Accordion title="Sign-in completes in the browser but the app never returns">
+    The `prompt-shields://` protocol handler was not registered, or is blocked by policy. Confirm the registration survived your packaging and deployment method.
+  </Accordion>
+  <Accordion title="A second instance won't start">
+    That is intended. The app enforces a single instance with a named mutex; launching again signals the existing instance rather than starting a new one. If the app appears to be gone but will not relaunch, check for an orphaned process in Task Manager.
+  </Accordion>
+  <Accordion title="No suggestions appear in a specific application">
+    Some applications draw custom text controls that do not expose a proper UI Automation text pattern. Report the specific application and version so coverage can be assessed.
+  </Accordion>
+</AccordionGroup>

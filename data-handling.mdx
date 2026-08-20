@@ -1,0 +1,104 @@
+---
+title: "Data handling"
+description: "What PromptShields collects, what it refuses to collect, and how each client stores data at rest."
+icon: "lock"
+---
+
+The whole premise of the product is that prompts contain sensitive data. Relaying that data to a dashboard or a SIEM would simply move the leak. So the system is built to be useful **without ever holding prompt text**.
+
+Use this page when your security or privacy team asks what the tool actually sees.
+
+## The rule
+
+<Warning>
+**Prompt bodies never leave the endpoint.** Not the original text, not the redacted text, not the matched values. What leaves is a one-way SHA-256 hash plus structured metadata.
+</Warning>
+
+This is enforced in three places:
+
+1. **The wire format** has no field for prompt text.
+2. **The backend** applies a `prompt_hash` check constraint on the violation table, so raw prompt text is rejected at the database layer rather than stored.
+3. **The SIEM forwarder** ships structured fields and the hash only — never the body, the response, or extracted secrets.
+
+## What is transmitted
+
+| Field | Example | Why it exists |
+| --- | --- | --- |
+| `promptHash` | SHA-256 digest | De-duplicates repeat events without revealing content |
+| `detectionCategories` | `["ssn", "creditCard"]` | Tells you *what kind* of data was at risk |
+| `action` | `redacted` / `flagged` / `logged` | Whether the user accepted the fix |
+| `severity` | `high` / `medium` / `low` | Drives alerting and reporting thresholds |
+| `applicationId` | `chatgpt` | Which AI tool was in use |
+| `timestamp` | ISO-8601 | Ordering and reporting windows |
+| `device_id` | MDM device identifier | Only when the device is enrolled and the MDM is connected |
+
+Identity is attached via the Entra ID SSO claim rather than being derived from the prompt.
+
+## What is never transmitted
+
+- The prompt as typed
+- The prompt after redaction
+- Any matched value — no email address, card number, or identifier
+- The AI tool's response
+
+## Storage at rest, per client
+
+<Tabs>
+  <Tab title="Browser extension">
+    - **Tokens** — encrypted and held in `chrome.storage.local`; the background service worker owns the full token lifecycle including refresh and validation.
+    - **History** — suggestion history is served from the API rather than cached wholesale on the device.
+    - **Hardening** — strict Content Security Policy, input sanitisation, XSS protections, and token validation on every use.
+  </Tab>
+  <Tab title="macOS agent">
+    - **Credentials** — macOS Keychain, with `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`, so nothing is readable before first unlock and nothing syncs off the device.
+    - **Local database** — SwiftData, with sensitive fields encrypted using **AES-256-GCM**. The encryption key itself lives in the Keychain.
+    - **Identifiers** — service and account identifiers are hashed with SHA-512.
+    - **Failure mode** — encryption failures degrade gracefully rather than crashing the app.
+  </Tab>
+  <Tab title="Windows agent">
+    - **Credentials** — Windows Credential Manager, encrypted with **DPAPI**.
+    - **Local database** — SQLite at `%LocalAppData%\PromptShields\promptshields.db`, holding suggestion history, user preferences, and profile data.
+  </Tab>
+</Tabs>
+
+## Authentication
+
+All three clients authenticate through **Auth0**, and the admin console additionally supports **Microsoft Entra ID SSO**.
+
+- Browser: OAuth2 authorization-code flow with PKCE via `chrome.identity.launchWebAuthFlow`.
+- macOS: Auth0 with automatic token refresh; every network service retries once through a refresh path on a 401 or 403.
+- Windows: Auth0 OIDC through an embedded WebView2 browser, with a `prompt-shields://callback` custom URI scheme for the redirect.
+
+See [Identity and access](/admin/identity-and-access) for tenant mapping and provisioning rules.
+
+## Telemetry and analytics
+
+The clients can emit product analytics through PostHog, Firebase, and Google Analytics. These are **configured per environment** and can be disabled — on the Windows agent, analytics is an explicit enable/disable setting in `appsettings.*.json`.
+
+<Note>
+Analytics covers product usage events, not prompt content. If your organisation prohibits third-party analytics on managed endpoints, ask for a build with the analytics providers disabled before you roll out.
+</Note>
+
+## Outbound integrations
+
+| Destination | What it receives |
+| --- | --- |
+| **Microsoft Sentinel** | `PromptShieldsActivity_CL` events via the Logs Ingestion API and a custom DCR. High-severity events can be promoted to first-class Sentinel incidents through the Graph Security API. Structured fields plus `PromptHash` only. |
+| **Ardoq AI Lens** | A nine-file CSV bundle describing your AI estate — applications, people, org units, data stores, technology products and services, compliance assessments, and the edges between them. Inventory metadata, no prompt data. |
+
+## Questions your privacy review will ask
+
+<AccordionGroup>
+  <Accordion title="Does it read everything I type?">
+    The endpoint clients read the *focused text field*, and the browser extension only does so on the AI sites in its permission list. Analysis of a given prompt is triggered by the user, and the result is a suggestion the user must accept.
+  </Accordion>
+  <Accordion title="Can an admin read a user's prompts in the console?">
+    No. The console never receives prompt text, so there is nothing to read. An admin sees that a category was detected, in which application, at what time, and whether the user accepted the fix.
+  </Accordion>
+  <Accordion title="Is this keystroke logging?">
+    No keystroke stream is recorded or transmitted. Text is read from the focused field in memory for analysis and is not persisted as typed.
+  </Accordion>
+  <Accordion title="What happens on an unmanaged or personal device?">
+    Without MDM enrolment there is no `device_id` to attach, so events are attributed to the signed-in user only. Coverage on unmanaged devices depends on the user installing the client.
+  </Accordion>
+</AccordionGroup>

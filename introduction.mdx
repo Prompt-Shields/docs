@@ -1,71 +1,93 @@
 ---
-title: Introduction
-description: "Welcome to the home of your new documentation"
+title: "PromptShields for IT"
+description: "What PromptShields does, where it runs, and what it asks of your fleet."
+icon: "shield-check"
 ---
 
-<img
-  className="block dark:hidden"
-  src="/images/hero-light.png"
-  alt="Hero Light"
-/>
-<img
-  className="hidden dark:block"
-  src="/images/hero-dark.png"
-  alt="Hero Dark"
-/>
+PromptShields keeps sensitive data out of AI chat tools **at the point of typing**, and gives IT a single console showing what happened across the organisation.
 
-## Setting up
+It is built around one deliberate choice: **monitor and coach, don't block**. Detection runs on the endpoint, the user decides whether to accept a redaction, and only structured metadata — never the prompt text — leaves the device.
 
-The first step to world-class documentation is setting up your editing environments.
+<Note>
+This guide is written for the people who deploy and run PromptShields: IT admins, endpoint engineers, and security leads. If you are looking for end-user help, see [Troubleshooting](/troubleshooting), which is written to be forwarded to a user.
+</Note>
+
+## The problem it solves
+
+Staff paste customer records, contracts, credentials, and health data into ChatGPT, Claude, Copilot, and Gemini. Existing controls miss it:
+
+| Control you already own | Why it doesn't catch this |
+| --- | --- |
+| MDM (Intune, Jamf, Kandji) | Cannot read browser or application content |
+| Network DLP / SWG | Sees TLS traffic, does not parse LLM prompt fields |
+| Microsoft Purview | Covers M365-hosted content, not third-party AI sites |
+| Defender for Cloud Apps | Sees URLs and traffic patterns, not what was typed |
+
+The only practical place to inspect a prompt is **in the input field, before submit** — which is where PromptShields runs.
+
+## Three layers
+
+<CardGroup cols={3}>
+  <Card title="Endpoint clients" icon="laptop">
+    A browser extension and two desktop agents watch focused text fields, detect sensitive content locally, and offer a redaction the user can accept or reject.
+  </Card>
+  <Card title="MDM" icon="tower-broadcast">
+    Your existing MDM is the delivery mechanism. It force-installs the clients so coverage does not depend on volunteers.
+  </Card>
+  <Card title="Admin console" icon="chart-line">
+    Aggregates endpoint telemetry into activity, coaching, policy, and audit views — and forwards to your SIEM.
+  </Card>
+</CardGroup>
+
+## What runs where
+
+| Client | Platform | Coverage |
+| --- | --- | --- |
+| Browser extension | Chrome, Microsoft Edge | 50+ AI and productivity sites |
+| macOS agent | macOS 14 Sonoma or later | Any app, via the Accessibility API |
+| Windows agent | Windows 10 (build 18362+) / Windows 11 | Any app, via UI Automation |
+
+The browser extension covers the majority of real-world AI usage and is the lightest thing to deploy. The desktop agents extend the same protection to native apps — desktop ChatGPT, Slack, Outlook, Word — that a browser extension cannot reach.
+
+## Start here
 
 <CardGroup cols={2}>
-  <Card
-    title="Edit Your Docs"
-    icon="pen-to-square"
-    href="https://mintlify.com/docs/quickstart"
-  >
-    Get your docs set up locally for easy development
+  <Card title="How it works" icon="diagram-project" href="/how-it-works">
+    The detection pipeline, end to end, from keystroke to dashboard.
   </Card>
-  <Card
-    title="Preview Changes"
-    icon="image"
-    href="https://mintlify.com/docs/development"
-  >
-    Preview your changes before you push to make sure they're perfect
+  <Card title="Data handling" icon="lock">
+    Exactly what is collected, what never leaves the device, and how it is stored.
+  </Card>
+  <Card title="Deploy the browser extension" icon="chrome" href="/deploy/browser-extension">
+    The fastest path to coverage. Start here for a pilot.
+  </Card>
+  <Card title="MDM rollout" icon="tower-broadcast" href="/deploy/mdm-rollout">
+    Force-install policies for Intune, Jamf Pro, Kandji, and JumpCloud.
+  </Card>
+  <Card title="Integrations" icon="plug" href="/admin/integrations">
+    Entra ID, Intune, Sentinel, Purview, Ardoq, and Slack — and how this fits alongside what you already own.
   </Card>
 </CardGroup>
 
-## Make it yours
+## A realistic rollout
 
-Update your docs to your brand and add valuable content for the best user conversion.
-
-<CardGroup cols={2}>
-  <Card
-    title="Customize Style"
-    icon="palette"
-    href="https://mintlify.com/docs/settings/global"
-  >
-    Customize your docs to your company's colors and brands
-  </Card>
-  <Card
-    title="Reference APIs"
-    icon="code"
-    href="https://mintlify.com/docs/api-playground/openapi"
-  >
-    Automatically generate endpoints from an OpenAPI spec
-  </Card>
-  <Card
-    title="Add Components"
-    icon="screwdriver-wrench"
-    href="https://mintlify.com/docs/content/components/accordions"
-  >
-    Build interactive features and designs to guide your users
-  </Card>
-  <Card
-    title="Get Inspiration"
-    icon="stars"
-    href="https://mintlify.com/customers"
-  >
-    Check out our showcase of our favorite documentation
-  </Card>
-</CardGroup>
+<Steps>
+  <Step title="Pilot the browser extension">
+    Deploy to a small group — IT plus one friendly department. Manual install is fine at this stage. See [Browser extension](/deploy/browser-extension).
+  </Step>
+  <Step title="Connect identity">
+    Wire up Microsoft Entra ID SSO so activity is attributed to real users rather than anonymous devices. See [Identity and access](/admin/identity-and-access).
+  </Step>
+  <Step title="Observe before enforcing">
+    Every policy starts in Guideline mode: it logs what it *would* have caught and changes nothing. Let it run. See [Policies](/admin/policies).
+  </Step>
+  <Step title="Push fleet-wide via MDM">
+    Once the false-positive rate is understood, force-install across the fleet. See [MDM rollout](/deploy/mdm-rollout).
+  </Step>
+  <Step title="Promote policies to Strict">
+    Turn on live redaction, with an approval gate and an automatic rollback watchdog.
+  </Step>
+  <Step title="Report">
+    Pull a 30-day report for your director, and forward high-severity events to your SIEM. See [Monitoring and reporting](/admin/monitoring-and-reporting).
+  </Step>
+</Steps>

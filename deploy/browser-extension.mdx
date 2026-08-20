@@ -1,0 +1,154 @@
+---
+title: "Browser extension"
+description: "Deploy PromptShields to Chrome and Microsoft Edge — permissions, supported sites, and managed install."
+icon: "chrome"
+---
+
+The browser extension is the fastest route to meaningful coverage, because most AI use happens in a browser tab. Deploy this first.
+
+## What it is
+
+A Manifest V3 extension for **Google Chrome** and **Microsoft Edge**, shipped as two builds from one codebase. It injects a content script into supported AI sites; when a user hovers a text input, an **Analyze** affordance appears, and the resulting suggestion must be explicitly accepted before any text changes.
+
+| | |
+| --- | --- |
+| Manifest version | 3 |
+| Browsers | Chrome, Microsoft Edge |
+| Authentication | Auth0, OAuth2 authorization code with PKCE |
+| Distribution | Chrome Web Store / Edge Add-ons, or unpacked for testing |
+
+## Permissions it requests
+
+Your security review will ask about this, so here it is in full.
+
+<Tabs>
+  <Tab title="API permissions">
+    | Permission | Why it is needed |
+    | --- | --- |
+    | `activeTab` | Interact with the tab the user is currently on |
+    | `identity` + `identity.email` | Auth0 sign-in via `chrome.identity.launchWebAuthFlow` |
+    | `storage` | Encrypted token storage and cached settings in `chrome.storage.local` |
+    | `alarms` | Scheduled token refresh and validation in the service worker |
+
+    Note what is **not** requested: no `tabs` (full tab metadata), no `webRequest`, no `cookies`, no `<all_urls>`, and no `history`.
+  </Tab>
+  <Tab title="Host permissions">
+    Host access is an explicit allow-list of AI and productivity domains — not a wildcard. The content script matches only those domains.
+
+    Representative entries:
+
+    ```
+    https://chatgpt.com/*            https://claude.ai/*
+    https://gemini.google.com/*      https://copilot.microsoft.com/*
+    https://*.perplexity.ai/*        https://*.deepseek.com/*
+    https://*.huggingface.co/*       https://poe.com/*
+    https://*.notion.so/*            https://*.grammarly.com/*
+    ```
+
+    The full list is roughly 50 hosts. It is visible in the extension's `manifest.json` and on the store listing, and it is the exact set the browser will show the user at install time.
+  </Tab>
+</Tabs>
+
+<Note>
+The manifest also contains `localhost` entries used by development builds. Verify you are deploying a **production** build — production builds emit only the production configuration and strip the development config entirely.
+</Note>
+
+## Sites it activates on
+
+The extension is active on the major assistants and a long tail of AI-adjacent tools:
+
+| | | |
+| --- | --- | --- |
+| ChatGPT / OpenAI | Claude / Anthropic | Google Gemini |
+| Microsoft Copilot | Perplexity AI | DeepSeek |
+| Hugging Face | Poe | Character AI |
+| You.com | Cohere | Stability AI |
+| Jasper AI | Copy.ai | Writesonic |
+| Midjourney | ElevenLabs | Synthesia |
+| Grammarly | Notion | Runway ML |
+| Replika | Murf AI | Fireflies AI |
+| Fathom Video | GPTZero | Gradio apps |
+| ScribeHow | Speechmatics | DeepMind |
+
+<Warning>
+Anything outside this list is not covered by the extension. If your users work in a native desktop app — the ChatGPT desktop client, Slack, Outlook — you need the [macOS](/deploy/macos-agent) or [Windows](/deploy/windows-agent) agent for that traffic.
+</Warning>
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                 Browser Extension                    │
+├──────────┬──────────┬──────────┬────────────────────┤
+│  Popup   │ Content  │  Pages   │  Background        │
+│  (UI)    │ Script   │ (Tabs)   │  (Service Worker)  │
+│          │          │          │                    │
+│ Login/   │ DOM      │ Settings │ Auth0 OAuth2       │
+│ Logout   │ Highlight│ Account  │ Token management   │
+│ Profile  │ Analyze  │ History  │ API proxy          │
+│ Nav      │ Suggest  │          │ Suggestion types   │
+│          │ Accept   │          │ Profile caching    │
+└─────┬────┴─────┬────┴────┬─────┴──────────┬─────────┘
+      └──────────┴─────────┴────────────────┘
+                       │
+            chrome.runtime messaging
+                       │
+                PromptShields API
+```
+
+All network calls and token handling are confined to the background service worker. The content script never holds a token.
+
+## Deploying it
+
+<Steps>
+  <Step title="Pilot with a manual install">
+    Have your pilot group install from the Chrome Web Store or Edge Add-ons listing. Confirm sign-in works against your tenant and that the Analyze affordance appears on ChatGPT.
+  </Step>
+  <Step title="Confirm the suggestion types">
+    In **Settings**, review the suggestion categories enabled for your organisation. Toggle off anything noisy for your environment before widening the rollout.
+  </Step>
+  <Step title="Force-install via MDM">
+    Push the extension ID through your MDM's Chrome/Edge managed policy. Exact payloads for Intune, Jamf Pro, Kandji, and JumpCloud are on the [MDM rollout](/deploy/mdm-rollout) page.
+  </Step>
+  <Step title="Verify coverage">
+    Check the console's deployment view for check-ins, and reconcile against your MDM device roster to find machines where the policy applied but the extension never phoned home.
+  </Step>
+</Steps>
+
+## Testing an unpacked build
+
+For pre-release validation you can side-load a build directly.
+
+<Tabs>
+  <Tab title="Chrome">
+    1. Go to `chrome://extensions/`
+    2. Enable **Developer mode**
+    3. Click **Load unpacked**
+    4. Select the `dist-chrome` directory
+  </Tab>
+  <Tab title="Edge">
+    1. Go to `edge://extensions/`
+    2. Enable **Developer mode**
+    3. Click **Load unpacked**
+    4. Select the `dist-edge` directory
+  </Tab>
+</Tabs>
+
+<Note>
+Side-loaded extensions are not auto-updated and are disabled by policy in many managed fleets. Use this for validation only, never for production rollout.
+</Note>
+
+## Pages the extension exposes to users
+
+| Page | What the user does there |
+| --- | --- |
+| **Popup** | Sign in and out, see account info, jump to the other pages |
+| **Settings** | Create, edit, toggle, and reset suggestion categories |
+| **Account** | Manage profile details and photo |
+| **History** | Browse past suggestions, with infinite scroll and a detail view |
+
+## Environments
+
+Builds are environment-aware. A `dev` build and a `prod` build embed different API endpoints, Auth0 credentials, and analytics keys, and a production build contains only the production block — the development configuration is not shipped.
+
+When you receive a build for deployment, confirm with whoever produced it that it is the production target for the correct browser.

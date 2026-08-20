@@ -1,0 +1,137 @@
+---
+title: "MDM rollout"
+description: "Force-install policies for Intune, Jamf Pro, Kandji, and JumpCloud."
+icon: "tower-broadcast"
+---
+
+MDM is the delivery layer. It cannot see prompt content — no MDM can — but without an enforced install policy, only the willing employees end up protected. That is the same gap every BYOD security tool faces, and it is the gap MDM closes.
+
+```
+┌──────────────────────────────────────────────────┐
+│ MDM (Intune / Jamf / Kandji / JumpCloud)         │
+│   ─ Pushes extension + agents to devices         │
+│   ─ Enforces ExtensionInstallForcelist           │
+│   ─ Reports compliance, OS version, encryption   │
+│   ─ PromptShields reads: roster + compliance     │
+└───────────────────────┬──────────────────────────┘
+                        │ install + policy
+                        ▼
+┌──────────────────────────────────────────────────┐
+│ PromptShields endpoint clients                   │
+│   ─ Detect sensitive content locally             │
+│   ─ Emit metadata only — never prompt text       │
+└───────────────────────┬──────────────────────────┘
+                        │
+                        ▼
+             PromptShields console
+```
+
+Cross-referencing MDM device IDs against client check-ins and Entra ID identities is what lets the console tell you *which* machines are covered and which are not.
+
+## Provider status
+
+| MDM | Status | Notes |
+| --- | --- | --- |
+| **Microsoft Intune** | Connected | Pulls the managed-device roster via Microsoft Graph. The default choice for any Microsoft 365 estate. |
+| **Jamf Pro** | On the roadmap | Apple-only. Adapter will read the device list via the Jamf API and install via Configuration Profile. |
+| **Kandji** | On the roadmap | Modern Apple MDM. Adapter will use the Kandji API with a Custom App / Login Item. |
+| **JumpCloud** | On the roadmap | Directory and MDM combined, cross-platform. Adapter will use the Directory API for SSO, device roster, and install commands. |
+
+<Note>
+The force-install policies below work **today on any of these platforms**, whether or not the console-side roster adapter has shipped. The adapter affects whether PromptShields can read your device inventory back — it does not affect your ability to push the client out.
+</Note>
+
+Workspace ONE / Omnissa and the SMB long tail (Hexnode, Mosyle, Scalefusion) are not currently planned. Their Chrome and Edge managed-policy payloads are equivalent to the ones below.
+
+## Force-installing the browser extension
+
+You will need the PromptShields extension ID from your store listing. It is referred to as `<EXTENSION_ID>` throughout.
+
+<Tabs>
+  <Tab title="Intune">
+    **Configuration Profile → Settings catalog →** `Google Chrome > Extensions > Configure the list of force-installed apps and extensions`
+
+    Add one entry:
+
+    ```
+    <EXTENSION_ID>;https://clients2.google.com/service/update2/crx
+    ```
+
+    For Microsoft Edge, use the equivalent `Microsoft Edge > Extensions > Control which extensions are installed silently` setting with the Edge Add-ons update URL.
+  </Tab>
+  <Tab title="Jamf Pro">
+    **Configuration Profile → Custom Settings →** preference domain `com.google.Chrome`:
+
+    ```xml
+    <key>ExtensionInstallForcelist</key>
+    <array>
+      <string>EXTENSION_ID;https://clients2.google.com/service/update2/crx</string>
+    </array>
+    ```
+
+    For Edge on macOS, use the `com.microsoft.Edge` domain with the same key.
+  </Tab>
+  <Tab title="Kandji">
+    **Library → Custom Profile**, using the same plist payload as Jamf Pro above. Scope it to the appropriate Blueprint.
+  </Tab>
+  <Tab title="JumpCloud">
+    **Commands → New Command**, targeting macOS or Windows, that writes the managed-policy file into the correct location:
+
+    - **macOS** — drop the plist into `/Library/Managed Preferences/`
+    - **Windows** — set the `ExtensionInstallForcelist` value under the Chrome or Edge policy registry key
+  </Tab>
+</Tabs>
+
+<Warning>
+Force-install makes the extension non-removable by the user. Communicate that before you push it. An extension that silently appears and cannot be removed generates far more helpdesk noise than one that was announced.
+</Warning>
+
+## Deploying the desktop agents
+
+The desktop agents are ordinary managed applications — deploy them the way you deploy any other line-of-business app.
+
+<Tabs>
+  <Tab title="Windows">
+    Package the MSIX and deploy through Intune as a **Line-of-business app** or a **Windows app (Win32)**.
+
+    Two prerequisites to verify in the same deployment:
+
+    1. The **WebView2 Runtime** must be present, or sign-in cannot complete.
+    2. The `prompt-shields://` protocol handler must be allowed to register.
+
+    See [Windows agent](/deploy/windows-agent) for detail.
+  </Tab>
+  <Tab title="macOS">
+    Deploy the signed application through your MDM's app-distribution mechanism.
+
+    The one thing MDM cannot do for you is grant **Accessibility** permission — macOS requires the user to approve that themselves. Plan a short user-facing instruction alongside the push.
+
+    See [macOS agent](/deploy/macos-agent) for the exact permission flow.
+  </Tab>
+</Tabs>
+
+## Verifying coverage
+
+A push that reports success is not the same as a client that is working. Reconcile three lists:
+
+<Steps>
+  <Step title="MDM says the policy applied">
+    Your MDM's compliance report — the device received the profile.
+  </Step>
+  <Step title="The client checked in">
+    The console's deployment view shows agents online, their version, and which platforms the rollout touched.
+  </Step>
+  <Step title="Investigate the gap">
+    Devices in list one but not list two are your real work: machines that are offline, offboarded, asleep, or where the user never completed sign-in or the permission grant.
+  </Step>
+</Steps>
+
+The deployment view surfaces offline agents with context — last seen date and, where known, the reason — so long-tail investigation does not require a spreadsheet.
+
+## Rollout sequence that works
+
+1. **IT department only.** Manual install. Shake out sign-in and endpoint configuration.
+2. **One friendly department.** Still manual or optional install. Watch the false-positive rate in Guideline mode.
+3. **Force-install the browser extension fleet-wide.** Policies stay in Guideline — observing, changing nothing.
+4. **Deploy the desktop agents** where native-app coverage matters.
+5. **Promote policies to Strict** once the data supports it. See [Policies](/admin/policies).

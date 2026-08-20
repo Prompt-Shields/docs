@@ -1,0 +1,213 @@
+---
+title: "Integrations"
+description: "What PromptShields connects to — identity, device management, SIEM, architecture tooling, and collaboration."
+icon: "plug"
+---
+
+PromptShields is designed to sit **alongside** the controls you already pay for, not replace them. It covers the one layer none of them can see: what a person typed into an AI tool before pressing send.
+
+## Where PromptShields fits
+
+| You already own | It covers | PromptShields adds |
+| --- | --- | --- |
+| **Microsoft Purview** | Data classification and DLP across M365 | Third-party AI sites Purview does not reach |
+| **Defender for Cloud Apps** | URLs, traffic patterns, app discovery | The content of the prompt itself |
+| **Intune / Jamf / Kandji** | Device state, compliance, app delivery | Everything above the device layer — MDM cannot read browser content |
+| **Entra ID** | Identity and access | Attribution of AI activity to those identities |
+| **Your EDR** | Endpoint threat detection | In-prompt sensitive-data detection, which is not a threat signal |
+
+<Note>
+The honest framing for a budget conversation: PromptShields is not another DLP product. It is the in-prompt layer that your existing DLP, CASB, and MDM stack structurally cannot observe.
+</Note>
+
+## Status at a glance
+
+| Integration | Category | Status |
+| --- | --- | --- |
+| Microsoft Entra ID | Identity | Available |
+| Auth0 | Identity (endpoint clients) | Available |
+| Microsoft Intune | Device management | Available |
+| Jamf Pro | Device management | Planned |
+| Kandji | Device management | Planned |
+| JumpCloud | Directory + device management | Planned |
+| Microsoft Purview | Data classification | Available — document ingest |
+| Microsoft Sentinel | SIEM | In development |
+| Ardoq AI Lens | Enterprise architecture | Available — CSV export |
+| Slack | Collaboration | Available — use-case survey bot |
+| Microsoft Teams | Collaboration | Planned |
+| Stripe | Billing | Available |
+
+---
+
+## Identity
+
+### Microsoft Entra ID
+
+Single sign-on for the admin console, with tenant mapping so everyone from one Azure directory lands in one workspace. Covered in full on [Identity and access](/admin/identity-and-access).
+
+### Auth0
+
+The endpoint clients authenticate through Auth0:
+
+| Client | Flow |
+| --- | --- |
+| Browser extension | OAuth2 authorization code with PKCE, via `chrome.identity.launchWebAuthFlow` |
+| macOS agent | Auth0 with automatic token refresh on 401/403 |
+| Windows agent | Auth0 OIDC in an embedded WebView2 window, returning via `prompt-shields://callback` |
+
+---
+
+## Device management
+
+### Microsoft Intune
+
+The connected MDM integration. PromptShields reads your managed-device roster through Microsoft Graph and cross-references it against client check-ins, so the console can tell you which machines are genuinely covered rather than merely targeted by a policy.
+
+Intune is also the delivery mechanism — force-installing the browser extension and deploying the desktop agents. See [MDM rollout](/deploy/mdm-rollout).
+
+### Jamf Pro, Kandji, and JumpCloud
+
+Roster adapters for these three are planned. They will follow the same shape as the Intune integration: read the device list from the provider's API, normalise it to a common device record, and reconcile against client check-ins.
+
+<Note>
+The **force-install policies work today** on all of these platforms. The adapter only affects whether PromptShields can read your inventory back — it is not a prerequisite for deploying the clients. Payloads for each are on the [MDM rollout](/deploy/mdm-rollout) page.
+</Note>
+
+Workspace ONE / Omnissa and the SMB long tail (Hexnode, Mosyle, Scalefusion) are not currently planned; their Chrome and Edge managed-policy payloads are equivalent to the ones documented.
+
+---
+
+## SIEM — Microsoft Sentinel
+
+<Warning>
+"Sentinel" here means **Microsoft Sentinel**, Microsoft's SIEM. It is unrelated to SentinelOne, the EDR vendor. Many organisations run both, and the names get confused in procurement conversations more often than you would expect.
+</Warning>
+
+The integration uses a deliberate **two-channel design**, because the two things a SOC needs from this data are not the same thing.
+
+| Channel | Path | Destination |
+| --- | --- | --- |
+| **Telemetry** — every event | Azure Monitor **Logs Ingestion API** → custom DCR | Custom table `PromptShieldsActivity_CL` |
+| **Actionable alerts** — high severity | **Microsoft Graph Security API** | The Sentinel incidents queue |
+
+Why both: alerts in Sentinel are first-class objects with an analyst queue, automation, and SLA tracking. If every event arrived as a plain log row, your SOC would have to write a detection rule before they saw anything at all. The separate alert channel gives them an inbox on day one.
+
+<Note>
+The legacy Log Analytics HTTP Data Collector API is deprecated and is not used. Syslog/CEF forwarding is not appropriate for this data and is not offered.
+</Note>
+
+### Setup
+
+<Steps>
+  <Step title="Create the Azure resources">
+    Run the provided Bicep template in Azure Cloud Shell. It creates the Data Collection Endpoint, the Data Collection Rule, the custom table, and the role assignment.
+  </Step>
+  <Step title="Register an app in your tenant">
+    The app registration lives in **your** directory. Grant it `Monitoring Metrics Publisher` scoped to the specific DCR — not tenant-wide.
+  </Step>
+  <Step title="Connect it in PromptShields">
+    Supply your Tenant ID, DCE URL, DCR Immutable ID, stream name, and table name in the admin setup wizard.
+  </Step>
+  <Step title="Verify with KQL">
+    ```kql
+    PromptShieldsActivity_CL
+    | where TimeGenerated > ago(24h)
+    | summarize count() by EventType, Severity
+    ```
+  </Step>
+</Steps>
+
+<Note>
+Authentication prefers a **Federated Identity Credential** over a stored client secret. FIC removes secret rotation entirely and eliminates the blast radius of a leaked secret. Use it unless your policy forbids it.
+</Note>
+
+### What lands in your workspace
+
+`UserAadObjectId` is denormalised into the table so KQL joins against `SigninLogs` work without a lookup table — you can correlate AI activity with sign-in activity directly.
+
+<Warning>
+The forwarder **never ships the prompt body**. You receive structured fields plus a SHA-256 `PromptHash`, which is enough to correlate and de-duplicate but not to reconstruct content. The premise of the product is that prompts contain sensitive data; relaying it into a SIEM would recreate the leak. See [Data handling](/data-handling).
+</Warning>
+
+### Delivery guarantees
+
+Every event either lands in Sentinel or is visibly in the dead-letter queue — no silent loss. Idempotency is keyed on `EventId`.
+
+| Failure | Behaviour |
+| --- | --- |
+| Network interruption mid-batch | Exponential backoff with jitter, 5 attempts |
+| Token expired (401) | Refresh and retry once |
+| DCR permission error (403) | Dead-letter the batch, alert the PromptShields admin — your SOC cannot fix this, so it is not sent to them |
+| Payload too large (413) | Halve the batch and retry |
+| Rate limited (429) | Honour `Retry-After`, move to a slow lane |
+| Sustained outage | Dead-letter queue with a replay tool; durability target of at least 7 days |
+
+A future ASIM parser will map the table to `imAuditEvent` so existing ASIM-based queries work unchanged. A Content Hub connector, workbook, and analytic rules are planned to follow the event stream.
+
+---
+
+## Data classification — Microsoft Purview
+
+PromptShields ingests documents through a Purview adapter, feeding classification context into the risk register. This is complementary rather than overlapping: Purview classifies data at rest and in M365; PromptShields observes what gets typed into third-party AI tools.
+
+Where a metric in the console draws on more than one source, its provenance is shown — so a number reading "Source: Purview DLP + endpoint audit" can be clicked through and verified rather than taken on trust.
+
+---
+
+## Enterprise architecture — Ardoq AI Lens
+
+For organisations running Ardoq, the console generates a nine-file CSV import bundle describing your AI estate:
+
+| File | Entity |
+| --- | --- |
+| `01_technical_capabilities.csv` | Technical capabilities |
+| `02_applications.csv` | AI applications |
+| `03_technology_products.csv` | Models and products |
+| `04_technology_services.csv` | Technology services |
+| `05_people.csv` | People |
+| `06_organization.csv` | Organisational units |
+| `07_data_stores.csv` | Data stores |
+| `08_compliance_assessments.csv` | Compliance assessments |
+| `09_references.csv` | Cross-workspace relationships |
+
+Inventory metadata only — no prompt data is included.
+
+---
+
+## Collaboration — Slack
+
+A Slack bot collects AI use-case declarations directly from staff, which is considerably more effective than emailing a form and hoping.
+
+| Aspect | Detail |
+| --- | --- |
+| **Install** | Slack OAuth v2 per tenant. An admin clicks *Connect Slack workspace* in the console. |
+| **Scopes** | `chat:write`, `im:write`, `im:read`, `users:read`, `users:read.email` |
+| **Delivery** | The bot DMs each recipient a Block Kit survey, rate-limited to respect Slack's messaging budget. Large audiences are spread over several minutes. |
+| **Responses** | Interactive components post back to PromptShields, which validates the Slack signing secret and advances the question flow. |
+| **Token storage** | Bot tokens are stored encrypted per tenant in Azure Key Vault. |
+
+<Note>
+**Consent is built in.** The first DM identifies the bot, names the organisation, states that responses go to the IT lead only, and offers a permanent opt-out by replying `STOP`. Opted-out users are skipped by the delivery worker from then on. Raise this proactively with your works council or employee representatives — it is the question they will ask.
+</Note>
+
+Where a recipient has no resolvable Slack handle, an email fallback sends a magic link to the same survey hosted on the web.
+
+**Microsoft Teams** support is planned, using Adaptive Cards. The question flow, data model, and consent logic are shared, so only the delivery adapter differs.
+
+---
+
+## Product analytics
+
+The endpoint clients can emit product-usage analytics through **PostHog**, **Firebase**, and **Google Analytics**. These are configured per environment and can be disabled at build time.
+
+<Warning>
+Analytics covers product usage events, never prompt content. If your organisation prohibits third-party analytics on managed endpoints, request a production build with the providers disabled **before** you roll out — it is a settings change, not a code change, but it needs to happen at packaging time.
+</Warning>
+
+---
+
+## Billing — Stripe
+
+Subscription and billing management is handled through Stripe. The Windows agent exposes a `prompt-shields://billing` deep link that routes users to subscription management; the macOS agent and console link to the same flow.
+
+This is relevant to IT only in one respect: if you restrict protocol-handler registration by policy, allow-list the `prompt-shields://` scheme or both sign-in and billing links will fail. See [Windows agent](/deploy/windows-agent).

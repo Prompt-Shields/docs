@@ -1,0 +1,153 @@
+---
+title: "Policies"
+description: "The Guideline to Strict lifecycle — observe first, enforce second, with an automatic rollback."
+icon: "shield"
+---
+
+Two ideas explain the entire policy system. Internalise these and the rest follows.
+
+<CardGroup cols={2}>
+  <Card title="Templates suggest, admins decide" icon="file-lines">
+    The product ships expert-authored templates — OWASP LLM Top 10, EU AI Act, GDPR, PCI/HIPAA, Shadow AI, Content Safety. Templates are read-only. Every policy you actually run is a **clone** that you own and tune.
+  </Card>
+  <Card title="Every policy has two lives" icon="arrow-right-arrow-left">
+    Policies start in **Guideline** mode — they observe and log what they *would* have caught, and change nothing. Only once you trust the data do you promote to **Strict**, where the same detectors act in real time.
+  </Card>
+</CardGroup>
+
+This separation exists to answer the hardest question in policy enforcement — *"is this rule going to break our users?"* — with data, before you flip the switch.
+
+## The lifecycle
+
+```
+                    NEW POLICY
+                         │
+                         ▼
+                  ┌─────────────┐
+                  │  GUIDELINE  │◄──────────┐
+                  │  log only   │           │
+                  └──────┬──────┘           │
+                         │                  │
+                  Promote request           │
+                         ▼                  │
+                [Pending approvals]         │
+                         │                  │
+                All approvers approve       │
+                         ▼                  │
+                  ┌─────────────┐           │
+                  │   STRICT    │           │
+                  │ block/redact│           │
+                  └──────┬──────┘           │
+                         │                  │
+                  ┌──────┴──────┐           │
+              Manual         Watchdog       │
+              "Pause"        auto-demote    │
+                  └──────┬──────┘           │
+                         └──────────────────┘
+```
+
+## Day 1 — clone a template
+
+<Steps>
+  <Step title="Open Policies">
+    Then choose **New from template** to reach the template library.
+  </Step>
+  <Step title="Find the right template">
+    Filter by category, or search by OWASP reference (`LLM02`) or regulation (`Art. 9`).
+  </Step>
+  <Step title="Read the full spec">
+    Each template card opens to its rationale, an example violation, its detectors, and every tunable parameter with its default and help text.
+  </Step>
+  <Step title="Clone and customise">
+    Give it a name that means something in your environment — "PII Output — Customer Service" beats the generic template name. Optionally pre-select which applications it applies to.
+  </Step>
+</Steps>
+
+<Warning>
+A new policy is **always created in Guideline mode**, regardless of what the template suggests. There is no way to create a policy that starts enforcing. This is deliberate.
+</Warning>
+
+## Days 1 to 14 — tune and observe
+
+Four tabs on the policy detail page do the work:
+
+| Tab | What it is for |
+| --- | --- |
+| **Detection** | The detectors and their tunable parameters. Each parameter is marked `basic`, `advanced`, or `expert`, so you can choose how deep to go. A locked parameter means the template author marked it unsafe to tune. |
+| **Scope** | Which applications the policy applies to, plus broader filters — data classification, risk tier, department. |
+| **Test** | Paste a sample prompt, run it, and see exactly which detectors fire with confidence scores and matched substrings. |
+| **History** | Every mode change over the policy's life. |
+
+<Note>
+The **Test** tab is a pure simulation. No state changes, no violations recorded. Use it as much as you like to dial in parameter values before any real traffic is affected.
+</Note>
+
+Meanwhile the policy is observing live traffic in the background and logging every near-miss. After 30 days you have real numbers: total evaluations, would-block count, and false-positive rate.
+
+## Day 14 onward — promote to Strict
+
+Promotion is gated on two conditions:
+
+1. At least **14 days** in Guideline mode
+2. A false-positive rate below the threshold — **2%** by default
+
+Until both are met, the promote button tells you exactly what is missing: *"Need 8 more days in Guideline mode"* or *"FP rate is 3.4% — must be below 2%"*.
+
+When it unlocks, a four-step wizard opens:
+
+<Steps>
+  <Step title="Risk preview">
+    Blast-radius arithmetic from the last 30 days of observation — for example, *"Switching to Strict would have blocked 142 events, 0.31% of traffic, with 3 estimated false positives affecting 47 users."* No surprises.
+  </Step>
+  <Step title="Rollout strategy">
+    **All** for immediate full coverage, **canary** to start with one application, or **phased** for a gradual percentage ramp.
+  </Step>
+  <Step title="Override path">
+    Set the auto-demote threshold — by default, revert if the live false-positive rate exceeds 5%. This is the watchdog, and it is the reason promotion is not a one-way door.
+  </Step>
+  <Step title="Approval">
+    See which roles must sign off, then send the request. The policy stays in Guideline until every approval lands.
+  </Step>
+</Steps>
+
+### Who has to approve
+
+Required approvers are determined by the template's category:
+
+| Category | Required approvers |
+| --- | --- |
+| OWASP LLM | Security Lead |
+| EU AI Act | DPO + Security Lead |
+| GDPR | DPO |
+| Industry (PCI / HIPAA / Legal) | Security Lead + Compliance Officer |
+| Content Safety | Trust & Safety Lead |
+| Shadow AI | Security Lead |
+
+One rejection freezes the request and the policy stays in Guideline; submit a new request when you are ready. When the **last** required approval lands, the policy flips to Strict automatically and begins enforcing.
+
+## Steady state — enforcing
+
+A Strict policy shows a live badge and running statistics: blocks over 30 days, false-positive rate, and rollout strategy.
+
+The **watchdog** polls every 15 seconds, comparing the live false-positive rate against your auto-demote threshold:
+
+| Condition | What you see |
+| --- | --- |
+| Healthy | Nothing. The system stays out of your way. |
+| Over threshold | A grace-period banner with a live countdown — *"FP rate 5.2% > 5% threshold — auto-demote at T-04:32"* |
+| Recovered | A brief *"Recovered — back below threshold"*, then it disappears |
+| Auto-demoted | *"Auto-demoted by watchdog: FP rate sustained above threshold"* — the policy is back in Guideline, with the watchdog recorded as the actor in History |
+
+## The safety valve
+
+<Note>
+An admin can demote a Strict policy to Guideline **at any time, with no approvals required**. Increasing safety — less enforcement — never needs a second signature. Only increasing enforcement does.
+</Note>
+
+Use **Pause to Guideline** on the mode toggle. You are back in observation mode immediately.
+
+## Simple and Advanced views
+
+The Policies page has a **Simple ⇄ Advanced** toggle. Simple presents a compact table and a straightforward creation flow for teams that want a handful of sensible rules. Advanced exposes the full template library, per-parameter tuning, scope filters, and the approval machinery.
+
+Both operate on the same underlying policies. The toggle changes what you see, not what runs.

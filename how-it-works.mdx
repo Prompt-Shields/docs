@@ -1,0 +1,125 @@
+---
+title: "How it works"
+description: "From keystroke to dashboard — the full detection and telemetry pipeline."
+icon: "diagram-project"
+---
+
+PromptShields has one job on the endpoint: notice sensitive content in a text field, offer a safer version, and report *that it happened* without reporting *what it was*.
+
+## The pipeline
+
+```
+  User types in an AI input field
+             │
+             ▼
+  ┌────────────────────────────────┐
+  │ 1. DETECT (on the endpoint)    │   Browser: content script on the page
+  │    Focused text field is       │   macOS:   Accessibility API (AXUIElement)
+  │    identified and read locally │   Windows: UI Automation, 100 ms polling
+  └────────────────┬───────────────┘
+                   ▼
+  ┌────────────────────────────────┐
+  │ 2. ANALYSE                     │   Text is evaluated against the
+  │    Sensitive categories are    │   suggestion types enabled for the org
+  │    matched; a revision is      │
+  │    produced                    │
+  └────────────────┬───────────────┘
+                   ▼
+  ┌────────────────────────────────┐
+  │ 3. SUGGEST (user decides)      │   Browser: hover "Analyze" affordance
+  │    Overlay appears next to the │   Desktop: floating overlay window
+  │    field. Nothing changes      │
+  │    until the user accepts.     │
+  └────────────────┬───────────────┘
+                   ▼
+  ┌────────────────────────────────┐
+  │ 4. APPLY                       │   Accepted text is written back into
+  │    Only on explicit accept     │   the original field, in place
+  └────────────────┬───────────────┘
+                   ▼
+  ┌────────────────────────────────┐
+  │ 5. REPORT (metadata only)      │   SHA-256 prompt hash, categories,
+  │    Structured event to the     │   action, severity, application, device
+  │    PromptShields backend       │   ── never the prompt body
+  └────────────────┬───────────────┘
+                   ▼
+      Admin console  ─────►  SIEM (Microsoft Sentinel)
+```
+
+<Warning>
+**Nothing is modified without the user pressing accept.** This is a hard product rule, not a configuration option. PromptShields does not silently rewrite what someone typed, and it does not block a submit outright in its default posture.
+</Warning>
+
+## Step 1 — Detecting the text field
+
+Each client uses the native mechanism for its platform.
+
+<Tabs>
+  <Tab title="Browser">
+    A content script is injected into the supported AI sites listed in the extension's `host_permissions`. When the user hovers a text input, an **Analyze** affordance appears. The script handles DOM highlighting, the analysis request, and writing accepted text back.
+
+    The extension is Manifest V3. Page logic lives in the content script; all network and token handling lives in the background service worker.
+  </Tab>
+  <Tab title="macOS">
+    The agent uses the macOS **Accessibility API** to observe the focused element system-wide. Because `AXUIElement` handles are not `Sendable` under Swift 6 strict concurrency, the app keeps an element registry and passes around an identifier, resolving the live element only on the main actor when it needs to read or inject text.
+
+    Monitoring is **off by default** and cannot be enabled until the user is signed in and has granted Accessibility permission.
+  </Tab>
+  <Tab title="Windows">
+    The agent uses **UI Automation**. `UIAutomationManager` polls for the focused element at 100 ms intervals; `TextFieldDetector` decides whether that element is editable and raises focus and selection-change events.
+
+    The app runs from the system tray and enforces a single instance using a named mutex plus a named pipe.
+  </Tab>
+</Tabs>
+
+## Step 2 — Analysis and suggestion types
+
+Detection is driven by **suggestion types** — named categories such as PII redaction or tone adjustment. Admins create, edit, toggle, and reset these centrally, and users see only the categories enabled for their organisation.
+
+Text is sent to the PromptShields API for analysis, which returns a suggested revision. On the browser client this is the `/api/v2/suggestion/analyze/` endpoint; the desktop agents call the equivalent suggestion service.
+
+<Note>
+Categories are org-scoped, not per-user. A user can choose *which* enabled categories to run against a given prompt, but cannot invent categories or disable ones the organisation requires.
+</Note>
+
+## Step 3 and 4 — The user decides
+
+The suggestion is rendered in a non-intrusive overlay near the field — a floating window on desktop, an in-page panel in the browser. The user accepts or rejects. On accept, the client writes the revised text back into the original element (`TextInjector` on Windows, the Accessibility element on macOS, direct DOM manipulation in the browser).
+
+This is what makes PromptShields deployable without a change-management fight: from the user's point of view it behaves like a spell-checker, not a gate.
+
+## Step 5 — What gets reported
+
+The endpoint emits a structured violation event. The shape is fixed and deliberately narrow:
+
+```typescript
+interface ViolationEvent {
+  promptHash: string             // SHA-256 — not reversible
+  detectionCategories: string[]  // ["email", "creditCard", "ssn", ...]
+  action: "redacted" | "flagged" | "logged"
+  severity: "high" | "medium" | "low"
+  applicationId: string          // "chatgpt" | "claude" | "gemini" | ...
+  timestamp: string
+  // NEVER: prompt body, redacted prompt, or extracted secret values
+}
+```
+
+Where the device is enrolled in an MDM that the console is connected to, the event is also tagged with a `device_id`. That is what lets the activity log say *"M. Hayes on LAPTOP-MH-01 redacted an SSN in ChatGPT at 14:32"* without the system ever having stored the SSN.
+
+The backend refuses raw prompts at the database level — the violation table carries a `prompt_hash` constraint, so an endpoint that tried to send prompt text would be rejected rather than quietly stored.
+
+<Card title="Full data-handling detail" icon="lock" href="/data-handling">
+  What is collected, what is stored where on each platform, and what is deliberately excluded.
+</Card>
+
+## Where MDM fits
+
+MDM cannot see prompt content — no MDM can. Its role here is **coverage**: without a force-install policy, only the willing employees end up protected, which is the same gap every BYOD security tool faces.
+
+So the division of labour is:
+
+- **MDM** guarantees the client is installed and configured everywhere.
+- **The endpoint client** does the observation.
+- **The console** aggregates, scores, and reports.
+
+See [MDM rollout](/deploy/mdm-rollout) for the exact policy payloads.

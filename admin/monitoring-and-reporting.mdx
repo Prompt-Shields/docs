@@ -1,0 +1,116 @@
+---
+title: "Monitoring and reporting"
+description: "The activity log, fleet health, coaching, audit exports, and SIEM forwarding."
+icon: "chart-line"
+---
+
+Four questions come up in every AI governance conversation. The console is organised around answering them.
+
+| Question | Where you answer it |
+| --- | --- |
+| *What just happened?* | Activity log |
+| *Is the product actually running on our endpoints?* | Deployment |
+| *Is behaviour changing?* | Coaching and adoption |
+| *What do I show my director?* | Audit and report |
+
+## Activity log
+
+The event stream from every endpoint client. Each row is one detection: who, on what device, in which AI application, which categories fired, what action was taken, and how severe it was.
+
+Filters narrow by severity, application, department, and time window. Filter state is carried in the URL, so a filtered view is a link you can paste into a ticket or an email.
+
+<Note>
+Remember what is **not** here: the prompt text. A row tells you that a credit-card pattern was redacted in ChatGPT at 14:32 by a named user on a named device. It does not, and cannot, show you the number. See [Data handling](/data-handling).
+</Note>
+
+## Deployment and fleet health
+
+The page that closes the trust gap mid-evaluation — proof the agent is running where it is supposed to, on the version you expect.
+
+| Tile | Question it answers |
+| --- | --- |
+| **Agents online** | Are the clients actually checking in? |
+| **Agent version** | Are they running the build we promised? |
+| **Last MDM sync** | Is the device-management state fresh? |
+| **Platform breakdown** | Which endpoints did the rollout touch? |
+| **Offline agents** | Who is not checking in, and why? |
+
+The offline list carries prose context per device — offboarded on a date, asleep for nine days, and so on — because the reason a machine is dark is usually more useful than the fact that it is.
+
+<Card title="Reconciling coverage" icon="list-check" href="/deploy/mdm-rollout">
+  Cross-check this against your MDM roster. Devices where the policy applied but the client never checked in are the real gap.
+</Card>
+
+## Coaching and adoption
+
+The product's stated posture is **teach, don't block**. Coaching is where you see whether that is working: which nudges are delivered most often, which departments improve, and whether repeat offences fall over time.
+
+This is usually the most persuasive page for a non-technical audience, because it reframes the deployment from surveillance to enablement — the numbers show people learning rather than people being caught.
+
+## Audit and report
+
+Generates a report you can take upstairs: framework coverage, activity over a chosen window, and a PDF export.
+
+<Steps>
+  <Step title="Choose the window">
+    A 30-day window is the common default for a management update.
+  </Step>
+  <Step title="Confirm the scope">
+    Which departments, applications, and frameworks the report covers.
+  </Step>
+  <Step title="Export">
+    Produces a PDF with a print stylesheet designed for the page, not a screenshot of a dashboard.
+  </Step>
+</Steps>
+
+Counts on Overview, Coaching, and Audit are derived from the same underlying figures, so the number in your report matches the number on the screen you pulled it from. That consistency is deliberate — reports that disagree with the dashboard destroy trust in both.
+
+## Forwarding to Microsoft Sentinel
+
+Events can be pushed into your SIEM as **`PromptShieldsActivity_CL`**:
+
+- **Logs Ingestion API** with a custom Data Collection Rule for the event stream
+- **Microsoft Graph Security API** to promote high-severity events into first-class Sentinel incidents
+
+<Warning>
+The forwarder ships structured fields and the SHA-256 `PromptHash` only. Prompt bodies, model responses, and extracted secrets are never sent. The entire premise of the product is that prompts contain sensitive data — relaying it into a SIEM would recreate the leak you deployed this to prevent.
+</Warning>
+
+<Card title="Sentinel setup, guarantees, and KQL" icon="shield-halved" href="/admin/integrations">
+  The two-channel design, the Azure resources you need to create, delivery guarantees, and a verification query.
+</Card>
+
+## Exporting your AI estate to Ardoq
+
+For organisations running Ardoq's AI Lens, the console generates a nine-file CSV import bundle from its own inventory — applications, people, org units, data stores, technology products and services, compliance assessments, and the relationships between them. Inventory metadata only; no prompt data is included.
+
+<Card title="Full file list and setup" icon="plug" href="/admin/integrations">
+  See Integrations for the complete bundle contents.
+</Card>
+
+## Discovering shadow AI
+
+Detection events also feed a discovery view, which surfaces AI tools in use that nobody registered. In practice this is where most organisations get their first genuine surprise: the count of distinct AI applications in daily use is almost always higher than the count anyone would have guessed.
+
+Three discovery routes feed it:
+
+1. **Manual registration** — someone declares a use case
+2. **Browser telemetry** — the extension reports which AI sites are actually visited
+3. **Endpoint detection** — the desktop agents report AI applications running natively
+
+## A monthly rhythm that works
+
+<Steps>
+  <Step title="Weekly — skim the activity log">
+    Filter to high severity. You are looking for patterns, not individual rows.
+  </Step>
+  <Step title="Weekly — check fleet health">
+    Chase the offline list before it grows into a project.
+  </Step>
+  <Step title="Monthly — pull the 30-day report">
+    Same window every month so the trend line means something.
+  </Step>
+  <Step title="Quarterly — revisit policies">
+    Look at false-positive rates. Policies that have been quiet and accurate for a quarter in Guideline mode are candidates for promotion to Strict.
+  </Step>
+</Steps>

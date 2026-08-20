@@ -1,32 +1,39 @@
-# Mintlify Starter Kit
+# PromptShields documentation
 
-Click on `Use this template` to copy the Mintlify starter kit. The starter kit contains examples including
+Source for [docs.promptshields.com](https://docs.promptshields.com), built with [Mintlify](https://mintlify.com).
 
-- Guide pages
-- Navigation
-- Customizations
-- API Reference pages
-- Use of popular components
+Audience: IT admins, endpoint engineers, and security leads deploying and running PromptShields.
 
-### Development
+## Structure
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mintlify) to preview the documentation changes locally. To install, use the following command
+| Path | Contents |
+| --- | --- |
+| `docs.json` | Site config and navigation |
+| `introduction.mdx` | Entry point — what the product is and a rollout sequence |
+| `how-it-works.mdx` | The detection and telemetry pipeline end to end |
+| `data-handling.mdx` | What is collected, what never leaves the device, storage per platform |
+| `deploy/` | Browser extension, macOS agent, Windows agent, MDM rollout |
+| `admin/` | Identity and access, policies, monitoring and reporting, integrations |
+| `troubleshooting.mdx` | Cross-client failure modes |
 
+## Local preview
+
+```bash
+npx mint@latest dev
 ```
-npm i -g mintlify
+
+Check links before publishing:
+
+```bash
+npx mint@latest broken-links
 ```
 
-Run the following command at the root of your documentation (where docs.json is)
+## Publishing
 
-```
-mintlify dev
-```
+Commits to `main` deploy automatically to docs.promptshields.com.
 
-### Publishing Changes
+## House rules
 
-Install our Github App to auto propagate changes from your repo to your deployment. Changes will be deployed to production automatically after pushing to the default branch. Find the link to install on your dashboard. 
-
-#### Troubleshooting
-
-- Mintlify dev isn't running - Run `mintlify install` it'll re-install dependencies.
-- Page loads as a 404 - Make sure you are running in a folder with `docs.json`
+- **Never document prompt content flowing anywhere.** It does not, and the docs must not imply otherwise.
+- Mark unreleased integrations as *Planned* or *In development*. Do not describe roadmap work as shipped.
+- Keep internal material — roadmap phases, customer names, pricing strategy, PR numbers — out of this repo.
