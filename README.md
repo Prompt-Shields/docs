@@ -4,6 +4,8 @@ Source for [docs.promptshields.com](https://docs.promptshields.com), built with 
 
 Audience: IT admins, endpoint engineers, and security leads deploying and running PromptShields.
 
+The site carries four product tabs: **PromptShields**, **AI Token Lens**, **Agent Sentinel**, and the **AI Vendor Trust Exchange**.
+
 ## Structure
 
 | Path | Contents |
@@ -15,6 +17,10 @@ Audience: IT admins, endpoint engineers, and security leads deploying and runnin
 | `deploy/` | Browser extension, macOS agent, Windows agent, MDM rollout |
 | `admin/` | Identity and access, policies, monitoring and reporting, integrations |
 | `troubleshooting.mdx` | Cross-client failure modes |
+| `developers/` | Python SDK, AI Gateway, self-hosting, registry API |
+| `ai-token-lens/` | AI spend ledger across cloud, SaaS seats, and agents |
+| `agent-sentinel/` | macOS menu-bar monitor and kill switch for desktop AI agents |
+| `ai-vendor-trust-exchange/` | Public trust and due-diligence layer for AI vendors |
 
 ## Local preview
 

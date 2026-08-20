@@ -1,0 +1,95 @@
+---
+title: "Trust profiles"
+description: "Two field blocks, a provenance tag on every field, and a verified date that has to be earned."
+icon: "id-card"
+---
+
+Every vendor in ATX has **one canonical profile** — one OpenAI, shared by everyone, rather than a private copy per customer. The profile is what a due-diligence reviewer actually reads, so its structure is the product.
+
+## Two blocks, deliberately separated
+
+The split exists so that a reader can tell at a glance which facts were allowed to influence a verdict and which are context.
+
+### A. Security and risk
+
+*Independent, source-cited. This block — and only this block — feeds the trust rating.*
+
+| Group | Fields | Typical source |
+| --- | --- | --- |
+| **Model and data** | Foundation models, sub-processors, data flows, trains-on-your-data, training opt-out, DPA | Model cards, DPAs, trust centre |
+| **Certifications** | SOC 2, ISO 27001, ISO 42001, HIPAA, FedRAMP, PCI | Certification registries, trust centre |
+| **Compliance posture** | EU AI Act class, NIST AI RMF, OWASP LLM, ISO 42001 — covered, partial, or gap | Analyst assessment |
+| **Security posture** | Breaches and incidents, CVEs, bug-bounty programme | Analyst assessment and vendor attestation |
+| **AI-specific risk** | Red-team and eval results, model provenance, safety disclosures, data residency, retention | Model cards, vendor docs, published evals |
+| **Derived** | Risk score, trust rating | Rating engine — aggregates the above only |
+
+### B. Business and company
+
+*Descriptive context. **Not** a rating input. May be vendor-claimed or enrichment-sourced.*
+
+| Group | Fields |
+| --- | --- |
+| **Company** | HQ, founded, employee count, ownership, legal entity |
+| **Funding and viability** | Total raised, last round, investors, viability signal |
+| **Market presence** | Customer count, notable logos, category |
+| **Commercial** | Pricing model, tiers, contract terms, SLAs, support |
+| **Fit** | Integrations, deployment model (SaaS, self-host, VPC), regions |
+
+<Note>
+The separation is not cosmetic. A vendor can correct their headcount or their pricing page on their own profile; nothing they write can reach the block that produces a score. See [Independence](/ai-vendor-trust-exchange/independence).
+</Note>
+
+## Provenance on every field
+
+Each published field carries a tag and a source link:
+
+| Tag | Meaning |
+| --- | --- |
+| `verified` | Established from public evidence by analyst review, crawler, or enrichment — with the source cited |
+| `vendor_claimed` | Supplied by the vendor from a claimed profile |
+| `crowd` | Contributed by a member or a verified reviewer |
+
+A field with no provenance and no verified date **does not publish**. That is enforced at publish time, not left to convention — which is what makes the ratings defensible and the freshness guarantee auditable.
+
+## Freshness is a product surface
+
+Due diligence has a shelf life. A profile describing last quarter's posture is not merely less useful than a current one — for this job it is worthless, and a reviewer who trusts it is worse off than one who knew they had nothing.
+
+So currency is treated as a feature with its own machinery:
+
+<CardGroup cols={2}>
+  <Card title="Continuous re-verification" icon="rotate">
+    Trust centres, model cards, certification registries, and incident feeds are re-crawled on a schedule, with the cadence tied to the vendor's risk tier.
+  </Card>
+  <Card title="Dates that must be earned" icon="calendar-check">
+    A field's `last_verified_at` advances **only** when the fact is re-confirmed against its source. Nothing is refreshed by the passage of a crawl.
+  </Card>
+  <Card title="Change detection" icon="code-compare">
+    Posture is diffed over time. A new sub-processor, a dropped certification, a model swap, or a new incident becomes a typed change event on a public change log and a machine-readable feed.
+  </Card>
+  <Card title="Staleness surfaced everywhere" icon="triangle-exclamation">
+    Profiles, Ask ATX answers, and exported reports all show per-field verified dates and flag anything past its re-verification window.
+  </Card>
+</CardGroup>
+
+Watchlists ride on the same change events: a member following a vendor is notified when a material posture change lands, which is what turns a one-off lookup into ongoing diligence.
+
+## The three-tier data model
+
+Behind the profile sit three separate layers, because "a vendor" means something different at each:
+
+```
+Canonical Vendor Catalog     global; analyst, crawler and enrichment owned
+                             every field source-cited with a verified date
+        ▲ aggregates (anonymized, opt-in)
+Member Contributions         member-private by default
+                             opt-in sharing feeds catalog signals
+        ▼ derives
+Public Trust Profile         summary free; full report gated on contribution
+```
+
+Public reads are unscoped, member contributions are scoped to the member who made them, and the canonical catalog is global. See [The assessment exchange](/ai-vendor-trust-exchange/exchange) for how a contribution travels between those layers.
+
+<Card title="Ask ATX" icon="comments" href="/ai-vendor-trust-exchange/ask-atx">
+  How these fields are queried in plain language — and why every claim in an answer resolves back to one of them.
+</Card>
