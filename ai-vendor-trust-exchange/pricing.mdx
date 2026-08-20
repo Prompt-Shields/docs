@@ -1,84 +1,44 @@
 ---
-title: "Pricing model"
-description: "Priced per vendor monitored, gated on freshness — and structurally separated from every verdict."
+title: "Pricing and support"
+description: "Open source. Custom support available on request."
 icon: "tag"
 ---
 
-<Warning>
-**Draft — not a quote.** ATX is [in development](/ai-vendor-trust-exchange/introduction) and nothing here is on sale yet. The bands below are working estimates from comparable-market research, not committed prices; they are expected to move before anything is offered commercially. Treat this page as the shape of the model, not a price list.
-</Warning>
-
-## The value metric: per vendor monitored
-
-Seat-based pricing under-monetizes a data product. Ten reviewers reading one profile is not ten times the value of one reviewer reading it — but one team keeping **two hundred** AI vendors current is genuinely two hundred times the work behind the scenes.
-
-So the meter is **per vendor monitored**, which is where the third-party-risk and security-ratings market has converged for the same reason. It maps price directly to the headline value: keeping a defined set of AI vendors current.
-
-The boundary between free and paid falls on **freshness**, not on features:
-
-| | Free | Paid |
-| --- | --- | --- |
-| **What it is** | A point-in-time trust profile | A continuously monitored one |
-| **Includes** | Summary score, basic facts, [Ask ATX](/ai-vendor-trust-exchange/ask-atx), the option to claim | Full current due diligence, change alerts, freshness commitments, exports |
-| **The catch** | Accurate on the day you read it, and decaying from then on | `last_verified_at` keeps advancing, and you are told when posture moves |
-
-That split is deliberate. A static report is a good lead magnet and a poor product — because for due diligence, [currency is the whole point](/ai-vendor-trust-exchange/trust-profiles#freshness-is-a-product-surface). What is worth paying for is not the answer; it is the answer *staying true*.
-
-## The tiers
-
-| Tier | Who it is for | Includes | Indicative band |
-| --- | --- | --- | --- |
-| **Public trust profile** | Everyone | Point-in-time summary, basic facts, Ask ATX, claim option. No alerts, no freshness commitment. | **Free** |
-| **Buyer — Starter** | SMB security and procurement | Full current DD plus monitoring for roughly 5–10 vendors, change alerts, exports | **~$5K–10K/yr**, self-serve |
-| **Buyer — Pro** | Mid-market | A larger per-vendor bundle (roughly 25–50), faster alerts, questionnaire auto-fill, integrations | **~$20K–60K/yr**, per-vendor meter |
-| **Buyer — Enterprise** | Enterprise TPRM and GRC | Large or unlimited coverage, SSO, a freshness SLA, EU AI Act and ISO 42001 mapping, API access, named support | **$75K–250K+/yr**, negotiated |
-| **Vendor — verified profile** | Rated AI vendors | Claim, respond to findings, dispute workflow, keep your *own* data current, verified badge, buyer-intent leads | **~$5K–25K/vendor/yr**, tiered by reach |
-| **API / data** | GRC platforms and programmatic consumers | Usage-metered access to current scores and change events | **Usage-based**, add-on |
-| **Expert / deep assessment** | Buyers needing depth on one vendor | Human-led deep assessment, one-off or on retainer | **$5K–35K/engagement** |
-
-Free membership also runs on [give-to-get](/ai-vendor-trust-exchange/exchange): contributing an assessment unlocks full reports without a subscription. Paying and contributing are two routes to the same depth, and the exchange needs both.
-
-## What it displaces
-
-The honest comparison is not against another subscription. It is against **a manual vendor security review — roughly $5K–35K per assessment, and stale on the day it lands**.
-
-One such review costs about what a year of Starter does, covers one vendor instead of ten, and begins decaying immediately. That is the entire ROI argument, and it is worth stating plainly rather than dressing up: ATX is not cheaper than doing nothing, it is cheaper than doing the review you are already obliged to do.
-
-<Note>
-Two adjacent markets bracket the pricing. Third-party-risk and security-ratings tools price per vendor monitored and set the realistic entry point and meter. Dedicated AI-governance platforms price per model or per programme, an order of magnitude higher, and set the ceiling on what this job is worth — not the entry point. ATX deliberately sits on the lower meter.
-</Note>
-
-## Availability
-
-The tiers do not all arrive together, and the sequencing is a consequence of the product rather than a sales plan:
-
-<Steps>
-  <Step title="Public profiles and vendor claiming — first">
-    Vendor claiming is the earliest paid surface, because it is the one that works before the catalog is dense. It also seeds supply: a vendor keeping their own profile current makes the directory better for everyone reading it.
-  </Step>
-  <Step title="Buyer monitoring tiers — once freshness is real">
-    Starter and Pro stay dark until ratings and re-verification are demonstrably trustworthy and coverage in the beachhead vertical is credible. Selling monitoring before the monitoring works would spend the credibility the product runs on.
-  </Step>
-  <Step title="Enterprise, API and expert engagements — last">
-    These need coverage density, a stable methodology, and a vetted expert panel behind them.
-  </Step>
-</Steps>
-
-## Money never reaches a verdict
+ATX is **open source**. The catalog, the profile surface, [Ask ATX](/ai-vendor-trust-exchange/ask-atx), and the [exchange](/ai-vendor-trust-exchange/exchange) are built in the open, and you can read, run, and self-host the code.
 
 <Warning>
-**No tier on this page buys score influence — including the vendor tier.** A vendor paying for a verified profile is buying presence, the right to respond, and the ability to keep their own data current. They are not buying a better rating, a higher [Ask ATX](/ai-vendor-trust-exchange/ask-atx) ranking, or a say in the methodology.
+**In development.** ATX is at design stage — see the [overview](/ai-vendor-trust-exchange/introduction). There is no hosted service to sign up for yet, and the first code is still landing.
 </Warning>
 
-This is the part of the pricing model that is load-bearing rather than commercial. Vendors are monetized first, which is precisely the arrangement that makes buyers suspect a directory of being pay-to-play — so the separation cannot be a promise on a pricing page. It is enforced by separate services and isolation tests in CI, and published as a ratings-independence policy alongside the methodology.
+## What is free
 
-It is also the proven pattern in this market: the credible incumbents monetize badges, lead generation and vendor-side tooling, and refuse to sell anything that touches the score. Independence is not a constraint on the business model here. It is the reason anyone would consult the directory instead of the vendor's own marketing — which makes it the business model.
+Everything in the product itself:
 
-<CardGroup cols={2}>
-  <Card title="Independence" icon="scale-balanced" href="/ai-vendor-trust-exchange/independence">
-    What vendor payment may and may never reach, and the four mechanisms that enforce it.
-  </Card>
-  <Card title="The assessment exchange" icon="right-left" href="/ai-vendor-trust-exchange/exchange">
-    Give-to-get — the route to full reports that costs a contribution rather than a subscription.
-  </Card>
-</CardGroup>
+| | |
+| --- | --- |
+| **Public trust profiles** | Browse any vendor's profile — the source-cited [Security & Risk and Business blocks](/ai-vendor-trust-exchange/trust-profiles), with provenance tags and verified dates |
+| **Ask ATX** | Ask a due-diligence question in plain language and get a cited, ranked shortlist |
+| **The exchange** | Full reports are unlocked by [contributing an assessment](/ai-vendor-trust-exchange/exchange), not by paying — give-to-get |
+| **Self-hosting** | Run the whole thing yourself |
+
+The give-to-get model is the point: the exchange is refilled by the people using it, so consumption is gated on contribution rather than on a subscription.
+
+## Custom support
+
+If you need more than the open-source project gives you — a deployment tailored to your environment, help wiring ATX into an existing GRC or procurement workflow, deep assessment work on a specific vendor, or a support arrangement with commitments behind it — **get in touch**.
+
+<Card title="Talk to us" icon="envelope" href="https://promptshields.com">
+  promptshields.com — tell us what you are trying to cover and we will scope it.
+</Card>
+
+## Independence is unaffected
+
+<Warning>
+**No support arrangement buys a verdict.** Paying for custom work — as a buyer or as a rated vendor — never moves a trust score, a ranking, or an [Ask ATX](/ai-vendor-trust-exchange/ask-atx) answer.
+</Warning>
+
+This holds regardless of how the project is funded, and it is enforced structurally rather than promised: the rating path and any commercial path run as separate services, with isolation tests in CI proving the boundary.
+
+<Card title="Independence" icon="scale-balanced" href="/ai-vendor-trust-exchange/independence">
+  What money may and may never reach, and the four mechanisms that enforce it.
+</Card>
