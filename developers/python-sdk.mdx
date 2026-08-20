@@ -1,0 +1,152 @@
+---
+title: "Python SDK"
+description: "A drop-in OpenAI and Anthropic wrapper that records what your code is doing with AI."
+icon: "python"
+---
+
+The SDK replaces your OpenAI or Anthropic client with one that emits structured telemetry on every call. The calling code does not otherwise change.
+
+<Note>
+Not yet published to PyPI. Install from source — see below. When the package ships, `pip install "prompt-shields[openai]"` will be the route.
+</Note>
+
+## Install
+
+```bash
+git clone https://github.com/Bit-Pulse-AI/prompt-shields-sdk.git
+cd prompt-shields-sdk
+pip install -e packages/sdk/[dev]
+```
+
+Requires Python 3.11 or later.
+
+## Hello world
+
+<Tabs>
+  <Tab title="OpenAI">
+    ```python
+    from prompt_shields import ShieldsOpenAI
+
+    client = ShieldsOpenAI(
+        api_key="sk-...",                     # your OpenAI key — never transmitted
+        ps_api_key="ps-...",                  # your tenant key
+        ps_collector_url="http://localhost:8000",
+        business_unit="HR",
+        use_case="interview-screening",
+        owner="jane.doe@acme.com",
+        data_classification="confidential",
+        environment="production",
+        calling_service="hiring-service",
+    )
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "user", "content": "Summarise this candidate..."}],
+    )
+    ```
+  </Tab>
+  <Tab title="Anthropic">
+    ```python
+    from prompt_shields import ShieldsAnthropic
+
+    client = ShieldsAnthropic(api_key="sk-ant-...", ps_api_key="ps-...")
+
+    response = client.chat.completions.create(
+        model="claude-sonnet-4-20250514",
+        messages=[{"role": "user", "content": "..."}],
+        max_tokens=1024,
+    )
+    ```
+  </Tab>
+  <Tab title="Async">
+    ```python
+    from prompt_shields import AsyncShieldsOpenAI
+
+    client = AsyncShieldsOpenAI(api_key="sk-...", ps_api_key="ps-...")
+
+    response = await client.chat.completions.create(
+        model="gpt-4o",
+        messages=[...],
+    )
+    ```
+  </Tab>
+</Tabs>
+
+Note that the Anthropic surface is deliberately identical — `chat.completions.create`, not Anthropic's native `messages.create` — so switching vendors touches one line.
+
+## Constructor arguments
+
+| Argument | Required | Notes |
+| --- | --- | --- |
+| `api_key` | yes | Provider key. Never sent — only a SHA-256 fingerprint. |
+| `ps_api_key` | yes | Tenant key used to authenticate to the collector. |
+| `ps_collector_url` | no | Defaults to `http://localhost:8000`. |
+| `vendor` | no | `openai` (default) or `anthropic`. Set for you by the typed classes. |
+| `business_unit` | no | Org unit using the AI. **Part of the asset merge key.** |
+| `use_case` | no | Business name for this use case. **Part of the merge key.** |
+| `owner` | no | Email of the responsible person. |
+| `data_classification` | no | `public`, `internal`, `confidential`, or `restricted`. Highest wins on merge. |
+| `environment` | no | `production`, `staging`, `dev`. Separate environments are separate assets. |
+| `calling_service` | no | Service name; merge-key fallback when `use_case` is unset. |
+| `scan_pii` | no | Default `True`. Local PII detection. |
+| `send_prompt_text` | no | Default `False`. See the warning below. |
+| `pricing_table` | no | Override the built-in token-to-USD pricing. |
+
+### One client per use case
+
+Constructor metadata is immutable per instance and stamps every event, so a single shared global client collapses unrelated work into one meaningless registry entry.
+
+```python
+# DON'T — one global client for everything
+client = ShieldsOpenAI(api_key=..., ps_api_key=...)
+
+# DO — one client per (business_unit, use_case, environment)
+hr_screening = ShieldsOpenAI(..., business_unit="HR", use_case="interview-screening")
+legal_review = ShieldsOpenAI(..., business_unit="Legal", use_case="contract-review")
+```
+
+In FastAPI, build these once at startup rather than per request.
+
+## Privacy behaviour
+
+| Behaviour | Default |
+| --- | --- |
+| Prompt text transmitted | **Never**, unless you set `send_prompt_text=True` |
+| Provider API key transmitted | Never — SHA-256 fingerprint only |
+| PII values transmitted | Never — categories only |
+
+Detected PII categories are `email`, `phone`, `ssn`, `credit_card`, `ip_address`, `iban`, `health_data`, and `financial_data`. Detection is pattern-based and runs locally.
+
+<Warning>
+`send_prompt_text=True` ships full prompt content to your collector. It exists for narrow debugging cases and should not be enabled without a security review — it inverts the product's central privacy guarantee.
+</Warning>
+
+## Fail-open by design
+
+Telemetry never blocks a model call.
+
+- Events buffer locally, up to **1000**, and retry with exponential backoff.
+- On overflow, the **oldest** events drop first.
+- A collector outage degrades your discovery data. It does not degrade your application.
+
+## What else is captured
+
+| Capability | Notes |
+| --- | --- |
+| Tool / function calls | OpenAI `tool_calls` and Anthropic `tool_use` blocks parsed automatically |
+| Cost estimation | Built-in pricing for OpenAI, Anthropic, and Google models; override with `pricing_table` |
+| Per-request metadata | `ps_metadata={...}` adds `data_sources`, `output_destination`, `risk_tags`, `session_id`, `user_id` |
+| New providers | Pluggable adapter layer — a new vendor is roughly 20 lines |
+
+```python
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[...],
+    ps_metadata={
+        "data_sources": ["candidates_db"],
+        "output_destination": "hiring_dashboard",
+        "risk_tags": ["pii", "gdpr"],
+        "session_id": "review-2025-04-12-001",
+    },
+)
+```

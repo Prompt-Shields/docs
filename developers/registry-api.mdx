@@ -1,0 +1,94 @@
+---
+title: "Registry API"
+description: "Query the AI asset registry over HTTP — assets, vendors, models, data flows, and risks."
+icon: "database"
+---
+
+The collector exposes a read API over everything it has discovered. This is what EA tooling, dashboards, and your own scripts consume.
+
+All paths are relative to your collector, e.g. `http://localhost:8000`.
+
+## Authentication
+
+Every request needs a tenant API key as a bearer token:
+
+```bash
+curl -H "Authorization: Bearer ps-..." \
+     http://localhost:8000/api/v1/registry/assets
+```
+
+Missing or invalid keys return **401** with an RFC 7807 problem-detail body. Tenant scoping is resolved server-side from the key, so one tenant cannot read another's assets by manipulating request parameters.
+
+## Endpoints
+
+All endpoints are prefixed with `/api/v1/registry`.
+
+| Method | Path | Returns |
+| --- | --- | --- |
+| `GET` | `/assets` | List discovered AI assets (filterable) |
+| `GET` | `/assets/{asset_id}` | Full detail for one asset |
+| `GET` | `/assets/{asset_id}/data-flows` | Data lineage — what feeds in, where output goes |
+| `GET` | `/assets/{asset_id}/risks` | Risk framework mappings for the asset |
+| `GET` | `/vendors` | Distinct vendors discovered |
+| `GET` | `/models` | Distinct models discovered |
+| `GET` | `/search?q=...` | Semantic search over asset metadata (pgvector) |
+
+### Ingest
+
+One write endpoint, used by the SDK and gateway rather than by you directly:
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/ingest/events` | Submit telemetry events |
+
+## Examples
+
+<Tabs>
+  <Tab title="List assets">
+    ```bash
+    curl -H "Authorization: Bearer ps-..." \
+         "http://localhost:8000/api/v1/registry/assets"
+    ```
+  </Tab>
+  <Tab title="Asset detail">
+    ```bash
+    curl -H "Authorization: Bearer ps-..." \
+         "http://localhost:8000/api/v1/registry/assets/{asset_id}"
+    ```
+  </Tab>
+  <Tab title="Data flows">
+    ```bash
+    curl -H "Authorization: Bearer ps-..." \
+         "http://localhost:8000/api/v1/registry/assets/{asset_id}/data-flows"
+    ```
+  </Tab>
+  <Tab title="Semantic search">
+    ```bash
+    curl -H "Authorization: Bearer ps-..." \
+         "http://localhost:8000/api/v1/registry/search?q=customer+data+summarisation"
+    ```
+  </Tab>
+</Tabs>
+
+## Semantic search
+
+`/search` is a vector search over asset metadata using a pgvector HNSW index, not a substring match. Querying *"tools that read customer records"* surfaces assets whose descriptions are semantically close, even with no shared keywords.
+
+This is the practical way to answer governance questions like *"what touches candidate data?"* without knowing in advance how each team named their system.
+
+## Every asset carries its evidence
+
+Two fields do most of the work when you consume this API:
+
+- **`discovery_source`** — an array of every channel that detected the asset
+- **`confidence`** — `low`, `medium`, `high`, or `verified`, computed from that array
+
+Filter on confidence before putting registry data in front of an auditor. See [Confidence scoring](/developers/confidence-scoring).
+
+## Exporting to Ardoq
+
+The repository includes `demo/ardoq_recipe.json`, an [Ardoq Integration Builder](https://help.ardoq.com/en/articles/44154-integration-builder) recipe that reads this API and writes vendors, models, use cases, data flows, and risk mappings into Ardoq AI Lens.
+
+<Note>
+ServiceNow and LeanIX connectors are planned but not yet available. Until they ship, the Registry API is a plain REST interface — writing a custom connector is straightforward.
+</Note>

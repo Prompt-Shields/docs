@@ -37,6 +37,18 @@
         ]
       },
       {
+        "group": "Developers",
+        "pages": [
+          "developers/overview",
+          "developers/python-sdk",
+          "developers/ai-gateway",
+          "developers/self-host",
+          "developers/registry-api",
+          "developers/discovery-sources",
+          "developers/confidence-scoring"
+        ]
+      },
+      {
         "group": "Operate",
         "pages": [
           "troubleshooting"

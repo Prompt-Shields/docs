@@ -49,6 +49,10 @@ The only practical place to inspect a prompt is **in the input field, before sub
 
 The browser extension covers the majority of real-world AI usage and is the lightest thing to deploy. The desktop agents extend the same protection to native apps — desktop ChatGPT, Slack, Outlook, Word — that a browser extension cannot reach.
 
+<Note>
+These three cover AI that **people** use. AI that your **own services** call — LLM APIs invoked from code, pipelines, and agents — is invisible to all of them. That is covered separately by the [Python SDK and AI Gateway](/developers/overview).
+</Note>
+
 ## Start here
 
 <CardGroup cols={2}>
@@ -66,6 +70,9 @@ The browser extension covers the majority of real-world AI usage and is the ligh
   </Card>
   <Card title="Integrations" icon="plug" href="/admin/integrations">
     Entra ID, Intune, Sentinel, Purview, Ardoq, and Slack — and how this fits alongside what you already own.
+  </Card>
+  <Card title="For developers" icon="code" href="/developers/overview">
+    Instrument your own services with the Python SDK or the AI Gateway, so code-side AI shows up in the same registry.
   </Card>
 </CardGroup>
 

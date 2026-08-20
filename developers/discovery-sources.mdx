@@ -1,0 +1,62 @@
+---
+title: "Discovery sources"
+description: "The independent channels that find AI usage, and how they corroborate each other."
+icon: "radar"
+---
+
+No single channel sees everything. A browser extension cannot see a backend service calling GPT-4o; an SDK cannot see someone pasting into ChatGPT. Prompt Shields runs several independent channels and merges what they find.
+
+## The channels
+
+| Source | What it catches | How it works |
+| --- | --- | --- |
+| **Browser extension** | Shadow AI — ChatGPT, Gemini, Copilot in the browser | Chrome and Edge extensions observe AI tool usage |
+| **macOS agent** | System-level AI tool usage | Accessibility-based detection across all applications |
+| **Windows agent** | System-level AI tool usage | UI Automation across all applications |
+| **Python SDK** | Developer API calls, with rich business context | Drop-in OpenAI/Anthropic wrapper |
+| **AI Gateway** | All LLM API traffic, zero code change | Proxy intercepts and logs requests |
+| **Platform signal** | Enterprise platform audit logs | Pulls from Microsoft Purview, Defender, Azure |
+
+## Coverage matrix
+
+Which channel catches which kind of usage:
+
+```
+                       Browser  Desktop  SDK   Gateway  Platform
+Shadow AI in browser     yes      yes     -       -        -
+AI in desktop apps        -       yes     -       -        -
+Developer API calls       -        -     yes     yes       -
+CI/CD pipeline AI         -        -     yes     yes       -
+Backend AI services       -        -     yes     yes       -
+AI inside internal tools yes      yes     -      yes       -
+Platform audit logs       -        -      -       -       yes
+```
+
+The gap this makes obvious: **only the SDK and gateway see code-side AI**. If you deploy the endpoint clients alone, every AI call your own services make is invisible.
+
+## Multi-source corroboration
+
+When several channels detect the same capability, they merge into a single asset carrying multiple evidence trails:
+
+```
+  Browser extension detects ChatGPT in HR  ─┐
+                                            ├─►  Merged asset
+  SDK captures GPT-4o calls tagged HR      ─┤    confidence: verified
+                                            │
+  Gateway logs OpenAI traffic from HR svc  ─┘
+```
+
+The asset's `discovery_source` field is an **array** — every channel that saw it. That array is what drives [confidence scoring](/developers/confidence-scoring).
+
+## How assets get merged
+
+The collector does not create a new asset per event. It looks for an existing asset matching a **merge key** built from vendor, model, use case, business unit, and calling service. Matching events fold into the existing asset and extend its evidence.
+
+Two behaviours worth knowing:
+
+- **Environments stay separate.** A `production` asset and a `staging` asset are distinct, because conflating them would misrepresent your risk surface.
+- **The highest data classification wins.** If one event reports `internal` and another reports `confidential` for the same asset, the asset is `confidential`. Classification only ever ratchets upward on merge.
+
+<Note>
+This is why the metadata you set when constructing an SDK client matters so much. Business unit and use case are part of the merge key — get them wrong and one real system fragments into several registry entries. See [Python SDK](/developers/python-sdk).
+</Note>

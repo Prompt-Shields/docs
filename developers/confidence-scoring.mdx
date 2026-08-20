@@ -1,0 +1,69 @@
+---
+title: "Confidence scoring"
+description: "How the registry decides how much to trust each discovered asset."
+icon: "gauge-high"
+---
+
+Every AI asset carries a `confidence` value saying how certain the system is that the asset exists and is described accurately. It is **computed automatically** from which channels detected it — never set by hand.
+
+## The four levels
+
+| Level | Criteria | What it means |
+| --- | --- | --- |
+| `verified` | **Two or more** independent sources | Highest certainty — corroborated across channels |
+| `high` | A single detection from the **SDK** or **gateway** | Verified at code level; the call demonstrably happened |
+| `medium` | A single detection from a **browser extension**, **desktop agent**, or **platform signal** | Observed once by automated detection |
+| `low` | Anything else, including self-reported survey data | Claimed, not technically verified |
+
+## How it is computed
+
+```
+        How many sources?
+               │
+        ┌──────┴──────┐
+       2+             1
+        │             │
+    verified    Which source?
+                      │
+        ┌─────────────┼──────────────┐
+   sdk / gateway   browser /       other
+        │          desktop /         │
+      high         platform         low
+                      │
+                   medium
+```
+
+Source count dominates. A second independent channel promotes an asset to `verified` regardless of which channels they were — because agreement between two blind observers is stronger evidence than either one alone.
+
+## Why multi-source matters
+
+A survey response saying *"yes, my team uses ChatGPT"* is weak evidence. Someone may be guessing, or describing a trial from six months ago. Watch confidence climb as evidence accumulates:
+
+<Steps>
+  <Step title="Survey reports HR uses ChatGPT">
+    One source, self-reported → `low`
+  </Step>
+  <Step title="Browser extension detects ChatGPT in HR">
+    Now two independent sources → `verified`
+  </Step>
+  <Step title="SDK captures GPT-4o calls tagged business_unit=HR">
+    Three sources, one of them code-level → stays `verified`, with a richer evidence trail
+  </Step>
+</Steps>
+
+## Using it
+
+Treat confidence as a triage tool rather than a scoreboard.
+
+- **`verified`** — safe to put in front of an auditor or an EA tool.
+- **`high`** — real, but seen through one lens; the business context may be thin.
+- **`medium`** — worth a look; often shadow AI nobody has registered.
+- **`low`** — a lead, not a finding. Confirm before acting.
+
+<Note>
+A large `low`-confidence population is not a defect. It usually means your survey coverage runs ahead of your technical coverage — the fix is deploying another channel, which promotes the real ones and leaves the phantoms behind.
+</Note>
+
+<Card title="Where the sources come from" icon="radar" href="/developers/discovery-sources">
+  The channels feeding this calculation, and what each one can and cannot see.
+</Card>

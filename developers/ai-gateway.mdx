@@ -1,0 +1,61 @@
+---
+title: "AI Gateway"
+description: "Capture every LLM call as a proxy — no application changes."
+icon: "server"
+---
+
+The gateway is an HTTP proxy that sits between your applications and the model providers. Point your app at it and telemetry is injected at the HTTP layer, so nothing in your codebase changes.
+
+Use it when you need **breadth** — coverage of code you don't own, can't easily redeploy, or don't yet know exists.
+
+## Run it
+
+```bash
+docker run -p 8080:8080 \
+  -e PS_COLLECTOR_URL=http://collector:8000 \
+  -e PS_API_KEY=ps-... \
+  promptshields/gateway
+```
+
+Then repoint your application:
+
+```bash
+export OPENAI_BASE_URL=http://localhost:8080/v1
+```
+
+That's the whole integration. No dependency to add, no code to edit.
+
+## What it's built on
+
+A focused fork of the [Portkey AI Gateway](https://github.com/Portkey-AI/gateway) (MIT licensed), with a custom telemetry middleware added.
+
+<Note>
+The fork is **discovery-focused**. Portkey's routing, caching, and guardrails features have been stripped out — the gateway's job here is to observe traffic, not to make decisions about it. It inherits Portkey's broad provider support, so it is not limited to OpenAI and Anthropic.
+</Note>
+
+## Gateway or SDK?
+
+They capture different things, and the difference matters:
+
+| | AI Gateway | Python SDK |
+| --- | --- | --- |
+| Application changes | None — one env var | Wrap the client |
+| Business unit / use case / owner | Not known | Declared explicitly |
+| Data classification | Not known | Declared explicitly |
+| Confidence contribution | `high` | `high` |
+| Best for | Blanket coverage, unknown surface area | Systems where business context matters |
+| Languages | Any — it's HTTP | Python |
+
+The gateway tells you *that* a service called GPT-4o. The SDK tells you it was **HR's interview-screening system, owned by Jane, handling confidential data**. The registry is far more useful with the second kind of record — but you can only write those for services you actively instrument.
+
+<Card title="Recommended pattern" icon="layer-group">
+  Put the gateway in front of everything to find your true surface area, then add the SDK to the services that turn out to matter. Both channels detecting one system promotes it to `verified`.
+</Card>
+
+## Non-Python stacks
+
+Until a TypeScript SDK exists, the gateway is the supported route for Node, Go, Java, Ruby, and everything else — it is a plain HTTP proxy, so any language that can set a base URL is covered.
+
+<Card title="How confidence is affected" icon="gauge-high" href="/developers/confidence-scoring">
+  Gateway detections count as code-level evidence, the same tier as the SDK.
+</Card>

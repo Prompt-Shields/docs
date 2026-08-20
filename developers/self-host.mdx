@@ -1,0 +1,112 @@
+---
+title: "Self-hosting the collector"
+description: "Stand up the telemetry collector and AI asset registry with Docker Compose."
+icon: "server"
+---
+
+The collector receives events from the SDK and gateway, deduplicates them into AI assets, and serves the [Registry API](/developers/registry-api). You run it yourself.
+
+<Note>
+There is no hosted collector endpoint yet. Every example in this section assumes a collector you operate, typically at `http://localhost:8000`.
+</Note>
+
+## What you get
+
+| Component | Technology |
+| --- | --- |
+| Collector | FastAPI, SQLAlchemy (async), Pydantic v2 |
+| Database | PostgreSQL 15 with **pgvector** (HNSW index) |
+| Migrations | Alembic |
+| Gateway | TypeScript / Node.js |
+
+pgvector is not optional — the registry's semantic search builds an HNSW index over asset metadata, so a stock PostgreSQL image will not work.
+
+## Prerequisites
+
+- Docker and Docker Compose
+- Python 3.11 or later
+
+## Bring it up
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/Bit-Pulse-AI/prompt-shields-sdk.git
+    cd prompt-shields-sdk
+    ```
+  </Step>
+  <Step title="Start PostgreSQL with pgvector">
+    ```bash
+    docker compose up -d db
+    ```
+  </Step>
+  <Step title="Install the Python packages">
+    ```bash
+    pip install -e packages/collector/[dev]
+    pip install -e packages/sdk/[dev]
+    ```
+  </Step>
+  <Step title="Run the migrations">
+    ```bash
+    cd packages/db && alembic upgrade head && cd ../..
+    ```
+  </Step>
+  <Step title="Seed demo data (optional)">
+    Useful for seeing a populated registry before you have real traffic.
+    ```bash
+    PYTHONPATH=packages:packages/collector python3 demo/seed_data.py
+    ```
+  </Step>
+  <Step title="Start the collector">
+    ```bash
+    PYTHONPATH=packages:packages/collector uvicorn collector.app:app --port 8000
+    ```
+  </Step>
+  <Step title="Run the end-to-end demo">
+    ```bash
+    python3 demo/demo_sdk_flow.py
+    ```
+  </Step>
+</Steps>
+
+The `PYTHONPATH` prefix is required because the collector and the shared `db` package are separate distributions in one repository.
+
+## Authentication
+
+Requests carry a tenant API key as a bearer token:
+
+```
+Authorization: Bearer <your-tenant-api-key>
+```
+
+A missing or unrecognised key returns **401** with an RFC 7807 problem-detail body. Tenant resolution happens on every request, so isolation is enforced server-side rather than by client-supplied tenant IDs.
+
+<Warning>
+**Run the collector on a trusted network.** Key handling is still being hardened, so treat the current build as suitable for evaluation and internal pilots — not for exposure on the public internet. Put it behind your VPN or private network, and don't terminate it on a public load balancer yet.
+</Warning>
+
+## Verifying it works
+
+```bash
+# Should return 401 without a key
+curl -i http://localhost:8000/api/v1/registry/assets
+
+# With a key
+curl -H "Authorization: Bearer ps-..." \
+     http://localhost:8000/api/v1/registry/assets
+```
+
+## Running the tests
+
+```bash
+# Unit tests — no database required
+PYTHONPATH=packages:packages/collector \
+  python3 -m pytest packages/collector/tests/test_dedup.py \
+                    packages/collector/tests/test_semantic_search.py -v
+
+# SDK tests
+PYTHONPATH=packages/sdk python3 -m pytest packages/sdk/tests/ -v
+
+# Integration tests — requires PostgreSQL
+PYTHONPATH=packages:packages/collector python3 -m pytest tests/ -v
+```

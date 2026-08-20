@@ -1,0 +1,95 @@
+---
+title: "Developer overview"
+description: "Instrument your own AI code and feed the same registry the endpoint clients populate."
+icon: "code"
+---
+
+Everything in the [Deploy](/deploy/browser-extension) section covers AI your *people* use. This section covers AI your *code* calls — LLM API calls from services, pipelines, and agents, which no browser extension or endpoint agent can see.
+
+Both feed one registry.
+
+## The two halves
+
+```
+  CLIENT-SIDE (people)          CODE-SIDE (services)
+  ────────────────────          ────────────────────
+  Browser extension             Python SDK
+  macOS agent                   AI Gateway proxy
+  Windows agent
+          │                             │
+          └──────────────┬──────────────┘
+                         ▼
+              Telemetry Collector
+                         │
+                         ▼
+              AI Asset Registry
+              (PostgreSQL + pgvector)
+                         │
+                         ▼
+              Registry API  →  Ardoq / EA tooling
+```
+
+An asset detected by two independent channels is more trustworthy than one detected by a single channel — that idea is formalised in [confidence scoring](/developers/confidence-scoring).
+
+## Two ways to instrument code
+
+<CardGroup cols={2}>
+  <Card title="Python SDK" icon="python" href="/developers/python-sdk">
+    Drop-in replacement for the OpenAI and Anthropic clients. Richest metadata — business unit, use case, owner, data classification — because you declare it at construction.
+  </Card>
+  <Card title="AI Gateway" icon="server" href="/developers/ai-gateway">
+    An HTTP proxy. Point `OPENAI_BASE_URL` at it and every call is captured with **no application changes**. Less business context, but nothing to integrate.
+  </Card>
+</CardGroup>
+
+Most teams use both: the gateway for blanket coverage of everything that already exists, the SDK on the services where the business context actually matters.
+
+## What it captures
+
+| Captured | Not captured |
+| --- | --- |
+| Vendor, model, token counts | Prompt text (unless explicitly opted in) |
+| Business unit, use case, owner | Your provider API key — only a SHA-256 fingerprint |
+| Data classification, environment | Matched PII values — categories only |
+| Tool / function calls used | Model responses |
+| Detected PII **categories** | |
+| Estimated cost | |
+
+<Warning>
+The SDK is **fail-open by design**. If the collector is unreachable, your LLM call still succeeds — telemetry buffers locally and retries. A discovery tool must never become a dependency of the thing it is discovering.
+</Warning>
+
+## Current status
+
+Be aware of what is and is not available yet:
+
+| Component | Status |
+| --- | --- |
+| Python SDK | Available — install from source, see [Python SDK](/developers/python-sdk) |
+| Telemetry collector + Registry API | Available — self-hosted, see [Self-hosting](/developers/self-host) |
+| AI Gateway | Available — Docker image |
+| Ardoq export | Available — Integration Builder recipe |
+| Published PyPI package | Not yet published |
+| TypeScript SDK | Not yet available |
+| Hosted Partner API | Not yet available — self-host the collector for now |
+
+<Note>
+Because the hosted API is not live, every example in this section points at a collector **you run**, typically `http://localhost:8000`. Nothing here depends on a Prompt Shields–hosted endpoint.
+</Note>
+
+## Where to start
+
+<Steps>
+  <Step title="Stand up a collector">
+    Docker Compose brings up PostgreSQL with pgvector and the collector. See [Self-hosting](/developers/self-host).
+  </Step>
+  <Step title="Instrument one service">
+    Pick a single service with real business context and wrap its client. See [Python SDK](/developers/python-sdk).
+  </Step>
+  <Step title="Add the gateway for breadth">
+    Route everything else through the proxy to find what you didn't know about. See [AI Gateway](/developers/ai-gateway).
+  </Step>
+  <Step title="Read the registry">
+    Query assets, vendors, models, data flows, and risks over HTTP. See [Registry API](/developers/registry-api).
+  </Step>
+</Steps>
