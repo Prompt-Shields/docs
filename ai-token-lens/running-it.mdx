@@ -1,0 +1,67 @@
+---
+title: "Running it"
+description: "Install, run, test, and how the seeded dataset is built."
+icon: "terminal"
+---
+
+A static Vite app. No backend, no database, no credentials required to run it.
+
+## Run
+
+```bash
+npm install
+npm run dev
+```
+
+Opens on `http://localhost:5173`.
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Development server |
+| `npm test` | The test suite |
+| `npm run build` | Static production bundle |
+
+## How it's built
+
+| Layer | Technology |
+| --- | --- |
+| Framework | Vite + React + TypeScript |
+| Charts | Recharts — stacked trend and provider bars |
+| Data | Deterministic seeded generator |
+| Licence | Apache-2.0 |
+
+## The seeded dataset
+
+The demo data is generated, not recorded: **90 days, 24 people, 6 agents, roughly 5,850 records.**
+
+It is deterministic, so every run of the demo tells the same story. Three beats are seeded *and enforced by tests*, which is what stops the narrative silently breaking as the generator evolves:
+
+1. **A runaway loop** — one agent, three days back, running at more than 3× its median
+2. **A team roughly 40% over budget**
+3. **A right-sizing opportunity worth at least $2.5K per month**
+
+<Note>
+Anthropic model prices in the dataset are **real list prices**. Other vendors' prices are plausible mocks. Keep that distinction in mind before quoting a cross-vendor comparison from a demo.
+</Note>
+
+## Recommendations are computed
+
+Savings recommendations are derived at runtime from mock usage multiplied by list-price deltas — never hardcoded strings. The consequence that matters: change the underlying usage and the recommendations change with it, so the figure shown is always consistent with the data on screen.
+
+## Screenshots
+
+```bash
+node scripts/screenshots.mjs
+```
+
+Captures every view headlessly through the local Chrome install.
+
+## Security posture
+
+The prototype ships **no backend and no credentials**.
+
+The optional Anthropic connector reads an admin key from the environment at script runtime and writes its snapshot into `public/live/`, which is gitignored. The key is never persisted. The CSV import parses in-browser and uploads nothing.
+
+<Card title="Connector setup" icon="plug" href="/ai-token-lens/connectors">
+  How to wire up the Anthropic connector and the ChatGPT Enterprise CSV import.
+</Card>

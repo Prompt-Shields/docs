@@ -1,0 +1,62 @@
+---
+title: "AI Token Lens"
+description: "One ledger for AI spend across cloud, SaaS seats, and bespoke agents."
+icon: "chart-pie"
+---
+
+<Warning>
+**This is a prototype.** AI Token Lens currently runs on a deterministic seeded dataset with no backend and no stored credentials. Two real connectors exist (Anthropic and a ChatGPT Enterprise CSV import); everything else is representative mock data. Treat the numbers in a demo as illustrative, not as your actual bill.
+</Warning>
+
+Finance teams can usually tell you what they spend on cloud. Almost nobody can tell you what they spend on **AI**, because the money leaves through three unrelated doors at once.
+
+## The three spend layers
+
+<CardGroup cols={3}>
+  <Card title="Cloud AI" icon="cloud">
+    AWS Bedrock, Azure AI Foundry, Google Vertex — metered inference on your cloud bill.
+  </Card>
+  <Card title="SaaS AI seats" icon="users">
+    ChatGPT Enterprise, Microsoft 365 Copilot, GitHub Copilot — per-seat licences bought by different departments.
+  </Card>
+  <Card title="Bespoke apps and agents" icon="robot">
+    Direct OpenAI and Anthropic API keys, gateways, and agent runtimes billed to whoever created the key.
+  </Card>
+</CardGroup>
+
+Each layer is visible in a different console, owned by a different team, and denominated differently — per-token, per-seat, per-request. AI Token Lens puts all three in one ledger with **per-person and per-agent attribution**, budgets, anomaly alerts, and model-choice savings recommendations.
+
+## The problem it is built around
+
+The demo narrative is *"the surprise bill you caught in time."*
+
+An agent enters a loop overnight and reprocesses the same batch hundreds of times. Nobody notices, because the spend is spread across an API key nobody owns, on a bill that arrives three weeks later. By then the money is gone and the conversation is an autopsy rather than a decision.
+
+Catching it needs three things at once, which is why the views are shaped the way they are:
+
+1. **A single trend line** covering all three layers, so a spike is visible at all
+2. **Attribution down to a person or an agent**, so the spike has an owner
+3. **A threshold that fires on day three**, not at invoice time
+
+## What it is not
+
+- Not a billing system. It reads and reconciles; it does not invoice or pay.
+- Not a chargeback engine. It attributes spend, but does not move money between cost centres.
+- Not real-time. Provider data arrives on provider schedules — daily granularity, not per-request.
+
+## Where to go next
+
+<CardGroup cols={2}>
+  <Card title="The five views" icon="table-columns" href="/ai-token-lens/views">
+    Overview, Agents, Alerts &amp; Budgets, People, and Connectors — what each answers.
+  </Card>
+  <Card title="Connectors" icon="plug" href="/ai-token-lens/connectors">
+    The live Anthropic connector, the ChatGPT Enterprise CSV import, and the honest limits of each.
+  </Card>
+  <Card title="Running it" icon="terminal" href="/ai-token-lens/running-it">
+    Install, run, test, and how the seeded dataset is generated.
+  </Card>
+  <Card title="Budgets and alerts" icon="bell" href="/ai-token-lens/connectors#configurable-budgets-and-alerts">
+    Alerts are computed from editable rules, not seeded strings.
+  </Card>
+</CardGroup>

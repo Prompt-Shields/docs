@@ -9,49 +9,81 @@
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "groups": [
+    "tabs": [
       {
-        "group": "Overview",
-        "pages": [
-          "introduction",
-          "how-it-works",
-          "data-handling"
+        "tab": "PromptShields",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "introduction",
+              "how-it-works",
+              "data-handling"
+            ]
+          },
+          {
+            "group": "Deploy",
+            "pages": [
+              "deploy/browser-extension",
+              "deploy/macos-agent",
+              "deploy/windows-agent",
+              "deploy/mdm-rollout"
+            ]
+          },
+          {
+            "group": "Administer",
+            "pages": [
+              "admin/identity-and-access",
+              "admin/policies",
+              "admin/monitoring-and-reporting",
+              "admin/integrations"
+            ]
+          },
+          {
+            "group": "Developers",
+            "pages": [
+              "developers/overview",
+              "developers/python-sdk",
+              "developers/ai-gateway",
+              "developers/self-host",
+              "developers/registry-api",
+              "developers/discovery-sources",
+              "developers/confidence-scoring"
+            ]
+          },
+          {
+            "group": "Operate",
+            "pages": [
+              "troubleshooting"
+            ]
+          }
         ]
       },
       {
-        "group": "Deploy",
-        "pages": [
-          "deploy/browser-extension",
-          "deploy/macos-agent",
-          "deploy/windows-agent",
-          "deploy/mdm-rollout"
+        "tab": "AI Token Lens",
+        "groups": [
+          {
+            "group": "AI Token Lens",
+            "pages": [
+              "ai-token-lens/introduction",
+              "ai-token-lens/views",
+              "ai-token-lens/connectors",
+              "ai-token-lens/running-it"
+            ]
+          }
         ]
       },
       {
-        "group": "Administer",
-        "pages": [
-          "admin/identity-and-access",
-          "admin/policies",
-          "admin/monitoring-and-reporting",
-          "admin/integrations"
-        ]
-      },
-      {
-        "group": "Developers",
-        "pages": [
-          "developers/overview",
-          "developers/python-sdk",
-          "developers/ai-gateway",
-          "developers/self-host",
-          "developers/registry-api",
-          "developers/discovery-sources",
-          "developers/confidence-scoring"
-        ]
-      },
-      {
-        "group": "Operate",
-        "pages": [
-          "troubleshooting"
+        "tab": "Agent Sentinel",
+        "groups": [
+          {
+            "group": "Agent Sentinel",
+            "pages": [
+              "agent-sentinel/introduction",
+              "agent-sentinel/install",
+              "agent-sentinel/cli"
+            ]
+          }
         ]
       }
     ]

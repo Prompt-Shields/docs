@@ -1,0 +1,93 @@
+---
+title: "Install and build"
+description: "Requirements, building the menu-bar app, permissions, and distribution."
+icon: "hammer"
+---
+
+## Requirements
+
+| | |
+| --- | --- |
+| macOS | 13 or later |
+| Xcode | 15 or later (Swift 5.9) |
+| Licence | MIT |
+
+## Build
+
+```bash
+# Run the test suite — pure-logic tests, no GUI needed
+swift test
+
+# Build the menu-bar app
+swift build -c release
+```
+
+The test suite covers the monitoring core rather than the interface, so it runs headlessly and is safe to put in CI on a macOS runner.
+
+## Architecture
+
+The monitoring core is a standalone, UI-free library shared by two executables — the SwiftUI menu-bar app and a headless CLI.
+
+```
+Sources/
+├── AgentSentinelKit/            # library — plain Foundation/Darwin, no SwiftUI
+│   ├── ProcessMonitor.swift     #   libproc sampling: CPU, memory, sockets, children
+│   ├── ProcessController.swift  #   the kill switch (SIGTERM → SIGKILL)
+│   ├── Models/
+│   │   ├── MonitoredAgent.swift #   catalog of watched agents + process matchers
+│   │   └── AgentSample.swift    #   samples, snapshots, status, thresholds
+│   └── Services/
+│       └── TokenCostService.swift  # local log parsing + per-model pricing
+├── AgentSentinel/               # executable — SwiftUI menu-bar app
+│   ├── App.swift                #   MenuBarExtra entry point
+│   ├── MonitorViewModel.swift   #   polling loop + derived state
+│   └── Views/{Dashboard,AgentCard}View.swift
+└── AgentSentinelCLI/            # executable — headless snapshot / kill
+    └── main.swift
+```
+
+Because the core has no UI dependency it is fully unit-testable and backs the CLI directly — the same code path the app uses.
+
+## Permissions
+
+<Note>
+The default feature set needs **no special entitlements**. It reads process accounting for your own user's processes and sends signals to them — both ordinary unprivileged operations.
+</Note>
+
+The practical consequence: the kill switch cannot stop processes owned by another user or by the system. Those return `notPermitted`.
+
+Deeper telemetry — real per-agent file access and outbound connections — would require an opt-in [Endpoint Security](https://developer.apple.com/documentation/endpointsecurity) system extension, which needs an Apple-granted entitlement plus notarisation. That is not in the default build.
+
+## Producing a distributable app
+
+The sources drop straight into an Xcode app target. For a signed, distributable `.app` you will need to:
+
+<Steps>
+  <Step title="Wrap the sources in an Xcode app target">
+    So the bundle can be code-signed and notarised.
+  </Step>
+  <Step title="Configure it as a menu-bar accessory">
+    Set `LSUIElement` in the app target's `Info.plist` so it runs without a dock icon.
+  </Step>
+  <Step title="Sign and notarise">
+    Required for distribution outside your own machine — and required for native notifications to be delivered at all.
+  </Step>
+</Steps>
+
+Full steps for the app target, system extensions, signing, notarisation, and first-run approval are in `docs/BUILD.md` in the repository.
+
+<Warning>
+**Notifications need a signed app bundle.** Sustained-critical alerts will not be delivered from an unsigned `swift build` binary, so a local development build will appear to have broken notifications when the feature is working correctly.
+</Warning>
+
+## Configuration
+
+Thresholds, the sustained-anomaly window, notification settings, and the auto-kill policy are all editable in-app and persisted through `UserDefaults`.
+
+You can also extend the catalog of watched agents: custom agents — name, process matchers, and log directories — can be added in Settings and are picked up by the monitor, the cost estimator, and the auto-kill list alike.
+
+## Auto-kill
+
+Off by default, and enabling it requires an explicit confirmation.
+
+Once on, an agent that stays critical for the whole policy window is stopped automatically, with a per-agent cooldown, an optional allowlist, and a confirming notification.

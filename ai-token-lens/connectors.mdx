@@ -1,0 +1,71 @@
+---
+title: "Connectors"
+description: "The live Anthropic connector, the ChatGPT Enterprise CSV import, and configurable budgets."
+icon: "plug"
+---
+
+Most of the dashboard runs on seeded data. Two connectors pull something real, and both are deliberately narrow about what they claim.
+
+## Anthropic — live usage and cost
+
+Pulls your organisation's actual Anthropic usage and cost through the [Admin Usage & Cost API](https://platform.claude.com/docs/en/manage-claude/usage-cost-api) and overlays it on the dashboard.
+
+<Steps>
+  <Step title="Create an Admin API key">
+    In the Anthropic Console: **Settings → Organization → API keys**. This requires the **admin** role — an ordinary API key will not work.
+  </Step>
+  <Step title="Fetch a snapshot">
+    ```bash
+    ANTHROPIC_ADMIN_KEY=sk-ant-admin-... node scripts/fetch-anthropic.mjs
+    ```
+    Pulls a 30-day window. The key is read from the environment at runtime and is never written to disk.
+  </Step>
+  <Step title="Reload the dashboard">
+    A `live · anthropic` badge appears and the Anthropic provider now shows real spend.
+  </Step>
+</Steps>
+
+### How the numbers are reconciled
+
+This is the part worth understanding before quoting a figure:
+
+- **When a cost report is available**, daily records are scaled so each day sums *exactly* to what Anthropic billed. The per-record split is an allocation; the daily total is authoritative.
+- **When it is not**, the app falls back to tokens × list price — an estimate that will drift from your invoice, since it cannot see discounts or committed-use pricing.
+
+Snapshots are written to `public/live/`, which is gitignored.
+
+## ChatGPT Enterprise — CSV import
+
+ChatGPT Enterprise keeps per-member data in its admin console with no usable API. Rather than pretend that gap does not exist, the app imports the console's export.
+
+On the **Connectors** tab, choose *Import ChatGPT Enterprise CSV…* and pick a workspace-members export. Columns for email, name, department, and status are recognised **in any order**; a [sample export](https://github.com/Bit-Pulse-AI/AITokenLens/blob/main/public/sample-chatgpt-export.csv) is included.
+
+Active members then:
+
+- replace the mock seat spend with real per-person allocation
+- appear in the **People** view, with department mapped to a team where the names match
+- surface a `csv · chatgpt enterprise` badge
+
+<Note>
+Parsing happens **entirely in the browser**. Nothing is uploaded anywhere — there is no backend to upload to. The file never leaves the machine.
+</Note>
+
+## Connector tiers
+
+Sources are grouped by how obtainable the data actually is, rather than by vendor. The honest summary: some providers expose usage APIs, some expose billing only, and some keep per-member detail behind an admin console that no API reaches. The third group is why the CSV path exists.
+
+## Configurable budgets and alerts
+
+Alerts are **computed from editable rules**, not written into the dataset. On the **Alerts & Budgets** tab you can tune:
+
+| Setting | Effect |
+| --- | --- |
+| Monthly budget, per team | Drives the budget bars and over-budget alerts |
+| Budget-warning threshold | The percentage of budget that triggers a warning |
+| Agent-anomaly multiplier | How far above its median an agent must run to be flagged |
+
+Change any of them and the ticker, KPI counts, budget bars, and anomaly badges recompute live. Settings persist in browser storage, and a reset button restores defaults.
+
+<Warning>
+Because settings live in the browser, they are per-device. Two people viewing the same deployment can see different alerts if they have tuned their thresholds differently. That is a property of the prototype's storage model, not a feature.
+</Warning>

@@ -1,0 +1,57 @@
+---
+title: "Headless CLI"
+description: "Snapshot, watch, and stop agents from a script or a terminal."
+icon: "terminal"
+---
+
+The CLI is backed by the same monitoring core as the menu-bar app, so its numbers and thresholds match what the interface shows.
+
+## Commands
+
+```bash
+swift run agent-sentinel-cli                # one-shot table of running agents
+swift run agent-sentinel-cli --json         # machine-readable JSON snapshot
+swift run agent-sentinel-cli --watch 2      # refresh every 2s (Ctrl-C to exit)
+swift run agent-sentinel-cli --kill claude  # stop an agent by id
+```
+
+| Flag | Purpose |
+| --- | --- |
+| *(none)* | Print a one-shot table of currently running agents |
+| `--json` | Emit the same snapshot as JSON, for scripting |
+| `--watch <seconds>` | Re-sample on an interval until interrupted |
+| `--kill <agent-id>` | Stop an agent by id |
+
+## Why the CPU numbers are trustworthy
+
+The CLI samples CPU **twice with a short delay** before reporting. A single `libproc` sample gives a cumulative figure that is close to meaningless as an instantaneous percentage; the delta between two samples is the real utilisation.
+
+This is the difference between a number you can set a threshold on and a number that merely looks precise.
+
+## Uses
+
+<CardGroup cols={2}>
+  <Card title="Scripting" icon="code">
+    `--json` gives a stable snapshot to pipe into monitoring, dashboards, or a chat alert.
+  </Card>
+  <Card title="Cron checks" icon="clock">
+    Periodic sampling on a machine where you do not want a GUI running.
+  </Card>
+  <Card title="CI smoke tests" icon="vial">
+    Exercise the monitoring core on a macOS runner without launching the app.
+  </Card>
+  <Card title="Emergency stop" icon="hand">
+    `--kill` from a terminal when the menu bar is unreachable.
+  </Card>
+</CardGroup>
+
+## Limits
+
+The same boundaries as the app, since it is the same core:
+
+- Only your own user's processes can be sampled or signalled. Anything else returns `notPermitted`.
+- Token costs are estimates from local logs and a hand-maintained pricing table — they will not match a provider invoice exactly.
+
+<Card title="Full context on the limits" icon="circle-info" href="/agent-sentinel/introduction">
+  What Agent Sentinel does and does not claim to do.
+</Card>

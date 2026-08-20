@@ -1,0 +1,51 @@
+---
+title: "The five views"
+description: "Overview, Agents, Alerts & Budgets, People, and Connectors — and the question each one answers."
+icon: "table-columns"
+---
+
+Five tabs, each answering one question a finance or platform lead actually asks.
+
+## Overview — *"What are we spending, and is anything wrong?"*
+
+The landing view. An alert ticker across the top, a 90-day stacked trend beneath it, then provider bars and team budgets.
+
+The trend is stacked by **spend layer**, so cloud, seats, and bespoke API usage are visually separable rather than collapsed into one number. A spike in one layer stays legible instead of being averaged away.
+
+Lower down, provider bars show concentration — which vendor owns what share of the bill — and team budget bars show consumption against each team's monthly allowance.
+
+## Agents — *"Which agent is misbehaving?"*
+
+One card per agent, with its spend, its normal daily rate, and its current multiple of that rate.
+
+This is where a runaway loop becomes obvious: an agent running at several times its median daily cost is badged as an anomaly. The multiplier that triggers it is configurable rather than fixed, because "abnormal" differs by workload.
+
+## Alerts & Budgets — *"What should I do about it?"*
+
+Two halves. The upper half is where you tune the rules: each team's monthly budget, the budget-warning threshold, and the agent-anomaly multiplier.
+
+<Note>
+Alerts are **computed, not seeded**. Change a budget or a multiplier and the ticker, the KPI counts, the budget bars, and the anomaly badges all recompute immediately. Settings persist in your browser, with a reset button.
+</Note>
+
+The lower half carries **savings recommendations** — also computed rather than hardcoded. Each is derived from actual usage multiplied by the list-price delta between the model in use and a cheaper tier. A recommendation to route a summarisation workload to a mini-tier model comes with the arithmetic behind it, so it can be argued with.
+
+## People — *"Who is this spend attributable to?"*
+
+Every seat and every API key rolls up to a person, filterable by team. Click through for that individual's breakdown.
+
+This is the view that ties the three layers together: the same person may hold a Copilot seat, own an API key funding an agent, and sit in a team with a cloud budget. Per-person attribution **across all three layers at once** is the part that other tooling generally does not attempt.
+
+## Connectors — *"Where does the data come from, and can I trust it?"*
+
+Sources grouped into three tiers by how obtainable the data is.
+
+The tiering is deliberately honest about a real constraint: several vendors keep per-member data locked in an admin console with no API. Rather than pretending otherwise, the Connectors view names the wall and shows the import path around it.
+
+<Card title="Connector detail" icon="plug" href="/ai-token-lens/connectors">
+  What the Anthropic connector actually pulls, how the ChatGPT Enterprise CSV import works, and what each is allowed to claim.
+</Card>
+
+## Theme
+
+Light and dark, both drawn from a CVD-validated categorical palette restepped for dark surfaces. The three spend layers map to fixed palette slots, so a layer keeps its colour across every chart and both themes — the colour is part of the data encoding, not decoration.

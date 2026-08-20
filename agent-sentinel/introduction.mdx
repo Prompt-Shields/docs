@@ -1,0 +1,67 @@
+---
+title: "Agent Sentinel"
+description: "See what your AI desktop agents are doing on your Mac — and stop them with one click."
+icon: "gauge-high"
+---
+
+A native macOS **menu-bar app** that watches AI desktop agents — **Claude, ChatGPT, Grok, and Kimi** — so you know what they're doing, how much of your machine they're using, roughly what they're costing, and can stop them immediately if something looks wrong.
+
+## What it is, and what it isn't
+
+<Warning>
+Agent Sentinel is a **transparency and circuit-breaker tool, not a rogue-AI containment system.** A userspace application cannot guarantee that a model "won't go rogue." Anyone claiming otherwise is overselling.
+</Warning>
+
+What it can do, and does:
+
+- give an honest, live view of each agent's resource use and activity
+- flag anomalies early rather than after the fact
+- estimate spend from local logs
+- hand you a reliable kill switch
+
+That framing matters, because it sets the boundary of what the tool is accountable for. It observes and intervenes at the process level. It does not inspect model behaviour, and it makes no claim to.
+
+## Why it exists
+
+Desktop AI agents run as ordinary processes on your machine, spawning children, opening sockets, and burning tokens — with almost no visibility into any of it. Activity Monitor shows CPU, but cannot tell you *which* agent, or what it is costing, or whether this is normal for that agent.
+
+Agent Sentinel answers those three questions in one place, and puts a stop button next to the answer.
+
+## What you get
+
+| Area | What it does |
+| --- | --- |
+| **Live resource monitor** | Per-agent CPU %, memory, open network sockets, and child-process counts, sampled every couple of seconds via `libproc` — the same source Activity Monitor uses. |
+| **Activity signals** | Open sockets and child-process counts as a coarse proxy for how busy and how far-reaching an agent is. Warning and critical thresholds are tunable. |
+| **Status at a glance** | The menu-bar icon goes green → amber → red as any agent crosses a threshold. |
+| **Estimated token cost** | Tails local agent log and session files, prices tokens per model, and shows today's spend per agent and overall. |
+| **Kill switch** | Per-agent Stop — graceful `SIGTERM` escalating to `SIGKILL` — plus a global **Stop All**. |
+| **Throttle** | Lower a runaway agent's CPU priority instead of killing it: a proportionate intervention. |
+| **Sustained-anomaly detection** | A per-agent ring buffer distinguishes a brief spike from a genuine runaway. |
+| **Auto-kill policy** | Opt-in and off by default. Stops an agent that stays critical for the policy window. |
+
+## Honest limitations
+
+Worth knowing before you rely on it:
+
+- **Token costs are best-effort estimates**, derived from local logs and public per-model pricing. They will not match your provider invoice exactly, and the pricing table is maintained by hand.
+- **Throttle is effectively one-way** in the default build. Lowering CPU priority is unprivileged; raising it back is not.
+- **The kill switch only reaches your own processes.** Anything owned by another user or by the system returns `notPermitted`.
+- **Deep file and network telemetry is not in the default build.** That needs an Endpoint Security system extension and an Apple-granted entitlement.
+
+## Preview without building
+
+An interactive mock-up of the menu-bar popover — live metrics, threshold-driven status, and a working Stop / Stop All / Pause — ships as a single self-contained HTML file at `docs/interface-preview.html` in the repository. Open it in any browser to see the interface without building anything.
+
+It reproduces the layout and behaviour, and mirrors the same anomaly thresholds the Swift core uses. The shipping app is native SwiftUI.
+
+## Next
+
+<CardGroup cols={2}>
+  <Card title="Install and build" icon="hammer" href="/agent-sentinel/install">
+    Requirements, building the app, permissions, and distribution.
+  </Card>
+  <Card title="Headless CLI" icon="terminal" href="/agent-sentinel/cli">
+    Snapshot, watch, and kill agents from the command line or a script.
+  </Card>
+</CardGroup>
