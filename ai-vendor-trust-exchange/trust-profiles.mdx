@@ -53,6 +53,10 @@ A field with no provenance and no verified date **does not publish**. That is en
 
 ## Freshness is a product surface
 
+<Warning>
+**Partly built.** Every published field already carries a `last_verified_at` date, and the publish gate refuses a field without one. The machinery that *advances* those dates — scheduled re-crawling, change detection, the public change log and watchlist alerts — is designed and not yet built. Today a date tells you when an analyst confirmed the fact, and nothing re-confirms it automatically.
+</Warning>
+
 Due diligence has a shelf life. A profile describing last quarter's posture is not merely less useful than a current one — for this job it is worthless, and a reviewer who trusts it is worse off than one who knew they had nothing.
 
 So currency is treated as a feature with its own machinery:

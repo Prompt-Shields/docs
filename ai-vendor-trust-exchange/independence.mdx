@@ -24,7 +24,11 @@ Handled carelessly, buyers assume every rating was bought and the entire trust p
 
 ## How it is enforced
 
-Policy alone does not survive a quarter with a revenue target, and an open codebase does not enforce it either. Four mechanisms carry the boundary instead:
+Policy alone does not survive a quarter with a revenue target, and an open codebase does not enforce it either. Four mechanisms carry the boundary instead.
+
+<Note>
+**Partly built.** The public policy page and the block-level rule are live — the code knows that the Business block never feeds a rating, and a test holds it there. The rest arrives with the rating engine, which is not built yet: there is nothing to isolate from until there is a rating to protect.
+</Note>
 
 <CardGroup cols={2}>
   <Card title="Separate data paths" icon="network-wired">
@@ -37,7 +41,7 @@ Policy alone does not survive a quarter with a revenue target, and an open codeb
     Any change touching the boundary requires a test demonstrating the isolation and a second reviewer. Every paid surface is audited in CI as orthogonal to score and to ranking.
   </Card>
   <Card title="A public policy" icon="file-contract">
-    A ratings-independence policy publishes with the first ratings, alongside the methodology and its version history — so the rule is checkable from outside.
+    The ratings-independence policy and the methodology publish as public pages — live now, ahead of the first rating, so the rule is checkable from outside before there is anything to check it against.
   </Card>
 </CardGroup>
 
