@@ -51,6 +51,20 @@ Each published field carries a tag and a source link:
 
 A field with no provenance and no verified date **does not publish**. That is enforced at publish time, not left to convention — which is what makes the ratings defensible and the freshness guarantee auditable.
 
+## Comparing two vendors side by side
+
+Built. A profile answers *is this vendor safe to adopt?*; a shortlist usually needs *which of these two?* — so any two vendors in the same category can be read side by side at `/compare/{a}-vs-{b}`, with the Security & Risk block laid out field by field and a source and verified date on both sides.
+
+Three deliberate constraints:
+
+- **Same-category pairs only**, and only where both profiles clear a completeness bar. Comparing an LLM provider against a developer tool answers nothing, and a half-empty comparison is worse than none — so the full cross-product is not generated.
+- **A field only one side publishes still shows**, with the other marked *not assessed*. Absent means nobody checked, which is a different answer from a value, and dropping the row would hide the difference that matters.
+- **The pair slug is sorted**, so one pair never becomes two URLs, and a vendor compared against itself is a 404.
+
+The comparison covers the free public summary of each profile. Comparing full reports is a member capability and part of [the exchange](/ai-vendor-trust-exchange/exchange), which is not built yet.
+
+Category and curated collection pages work the same way: generated only where they clear a completeness bar, and carrying `noindex` below it rather than spending crawl budget on a thin page.
+
 ## Freshness is a product surface
 
 <Warning>
