@@ -68,8 +68,31 @@ Category and curated collection pages work the same way: generated only where th
 ## Freshness is a product surface
 
 <Warning>
-**Partly built.** Every published field already carries a `last_verified_at` date, and the publish gate refuses a field without one. The machinery that *advances* those dates — scheduled re-crawling, change detection, the public change log and watchlist alerts — is designed and not yet built. Today a date tells you when an analyst confirmed the fact, and nothing re-confirms it automatically.
+**Partly built.** The rules are built; the automation is not. Every published field carries a `last_verified_at` date and the publish gate refuses a field without one; a per-vendor **source registry** records what backs each field and where; and the **re-verification semantics** below — when a date may advance, and when it may not — are implemented and tested. What does not exist yet is the scheduler that re-reads those sources on a cadence, or the change log and watchlist alerts built on top of it. So nothing re-confirms a field automatically: today a date advances when an analyst re-reviews the fact and is recorded as having done so.
 </Warning>
+
+### What may advance a date
+
+Built. `last_verified_at` is only worth reading if it cannot move for the wrong reason — if a date could advance because a crawler ran rather than because the fact was re-confirmed, it degrades into *the date we last ran a crawler*. So a re-read resolves each field into one of three outcomes, and only one of them advances anything:
+
+| Outcome | Meaning | Date |
+| --- | --- | --- |
+| **Confirmed** | The source still says what the catalog says | Advances |
+| **Changed** | The source now says something else | Stays put — the change is reported for review, and the new value is **not** written silently |
+| **Unconfirmed** | The field could not be found on the page — moved, reworded, or removed | Stays put |
+
+Two rules follow from this, and both are enforced rather than intended:
+
+- **Confirmation is per field, never per page.** A re-read of a trust centre backing six fields confirms only the fields it could actually locate there — not all six because the fetch succeeded.
+- **Silence is not confirmation.** A field the re-read never mentioned is treated as unconfirmed, so it ages honestly rather than riding along on its neighbours.
+
+An analyst can also confirm a field by hand, but only **attributed to a person**: not every fact has a machine-readable source, and a signed-off human read is a legitimate confirmation where an anonymous one is not. The two are recorded distinguishably, so a date advanced by judgement is never mistaken for one a source confirmed.
+
+### The source registry
+
+Built. Rather than re-reading the free-text citation on each field, ATX keeps a per-vendor registry of the sources themselves — trust centres, model cards, certification registries, privacy policies, status pages, incident feeds — with fetch metadata and health on each. It was backfilled from the citations already on every published field, so it started with real coverage rather than empty.
+
+A source that fails repeatedly is **flagged as dead rather than quietly skipped**, because a vendor removing their trust centre is a posture change in disguise, and exactly the sort of thing a reviewer needs told. Source types are assigned by a URL heuristic that is labelled as one: an unrecognised URL is classified as *other* rather than given a confident wrong guess.
 
 Due diligence has a shelf life. A profile describing last quarter's posture is not merely less useful than a current one — for this job it is worthless, and a reviewer who trusts it is worse off than one who knew they had nothing.
 
@@ -77,13 +100,13 @@ So currency is treated as a feature with its own machinery:
 
 <CardGroup cols={2}>
   <Card title="Continuous re-verification" icon="rotate">
-    Trust centres, model cards, certification registries, and incident feeds are re-crawled on a schedule, with the cadence tied to the vendor's risk tier.
+    *Not built yet.* Trust centres, model cards, certification registries, and incident feeds are re-crawled on a schedule, with the cadence tied to the vendor's risk tier. The registry of what to re-read exists; the scheduler that reads it does not.
   </Card>
   <Card title="Dates that must be earned" icon="calendar-check">
     A field's `last_verified_at` advances **only** when the fact is re-confirmed against its source. Nothing is refreshed by the passage of a crawl.
   </Card>
   <Card title="Change detection" icon="code-compare">
-    Posture is diffed over time. A new sub-processor, a dropped certification, a model swap, or a new incident becomes a typed change event on a public change log and a machine-readable feed.
+    *Not built yet.* Posture is diffed over time. A new sub-processor, a dropped certification, a model swap, or a new incident becomes a typed change event on a public change log and a machine-readable feed.
   </Card>
   <Card title="Staleness surfaced everywhere" icon="triangle-exclamation">
     Profiles, Ask ATX answers, and exported reports all show per-field verified dates and flag anything past its re-verification window.
