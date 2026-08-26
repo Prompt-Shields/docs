@@ -1,0 +1,136 @@
+---
+title: "Trust profiles"
+description: "Two field blocks, a provenance tag on every field, and a verified date that has to be earned."
+icon: "id-card"
+---
+
+Every vendor in ATX has **one canonical profile** — one OpenAI, shared by everyone, rather than a private copy per customer. The profile is what a due-diligence reviewer actually reads, so its structure is the product.
+
+## Two blocks, deliberately separated
+
+The split exists so that a reader can tell at a glance which facts were allowed to influence a verdict and which are context.
+
+### A. Security and risk
+
+*Independent, source-cited. This block — and only this block — feeds the trust rating.*
+
+| Group | Fields | Typical source |
+| --- | --- | --- |
+| **Model and data** | Foundation models, sub-processors, data flows, trains-on-your-data, training opt-out, DPA | Model cards, DPAs, trust centre |
+| **Certifications** | SOC 2, ISO 27001, ISO 42001, HIPAA, FedRAMP, PCI | Certification registries, trust centre |
+| **Compliance posture** | EU AI Act class, NIST AI RMF, OWASP LLM, ISO 42001 — covered, partial, or gap | Analyst assessment |
+| **Security posture** | Breaches and incidents, CVEs, bug-bounty programme | Analyst assessment and vendor attestation |
+| **AI-specific risk** | Red-team and eval results, model provenance, safety disclosures, data residency, retention | Model cards, vendor docs, published evals |
+| **Derived** | Risk score, trust rating | Rating engine — aggregates the above only |
+
+### B. Business and company
+
+*Descriptive context. **Not** a rating input. May be vendor-claimed or enrichment-sourced.*
+
+| Group | Fields |
+| --- | --- |
+| **Company** | HQ, founded, employee count, ownership, legal entity |
+| **Funding and viability** | Total raised, last round, investors, viability signal |
+| **Market presence** | Customer count, notable logos, category |
+| **Commercial** | Pricing model, tiers, contract terms, SLAs, support |
+| **Fit** | Integrations, deployment model (SaaS, self-host, VPC), regions |
+
+<Note>
+The separation is not cosmetic. A vendor can correct their headcount or their pricing page on their own profile; nothing they write can reach the block that produces a score. See [Independence](/ai-vendor-trust-exchange/independence).
+</Note>
+
+## Provenance on every field
+
+Each published field carries a tag and a source link:
+
+| Tag | Meaning |
+| --- | --- |
+| `verified` | Established from public evidence by analyst review, crawler, or enrichment — with the source cited |
+| `vendor_claimed` | Supplied by the vendor from a claimed profile |
+| `crowd` | Contributed by a member or a verified reviewer |
+
+A field with no provenance and no verified date **does not publish**. That is enforced at publish time, not left to convention — which is what makes the ratings defensible and the freshness guarantee auditable.
+
+## Comparing two vendors side by side
+
+Built. A profile answers *is this vendor safe to adopt?*; a shortlist usually needs *which of these two?* — so any two vendors in the same category can be read side by side at `/compare/{a}-vs-{b}`, with the Security & Risk block laid out field by field and a source and verified date on both sides.
+
+Three deliberate constraints:
+
+- **Same-category pairs only**, and only where both profiles clear a completeness bar. Comparing an LLM provider against a developer tool answers nothing, and a half-empty comparison is worse than none — so the full cross-product is not generated.
+- **A field only one side publishes still shows**, with the other marked *not assessed*. Absent means nobody checked, which is a different answer from a value, and dropping the row would hide the difference that matters.
+- **The pair slug is sorted**, so one pair never becomes two URLs, and a vendor compared against itself is a 404.
+
+The comparison covers the free public summary of each profile. Comparing full reports is a member capability and part of [the exchange](/ai-vendor-trust-exchange/exchange), which is not built yet.
+
+Category and curated collection pages work the same way: generated only where they clear a completeness bar, and carrying `noindex` below it rather than spending crawl budget on a thin page.
+
+## Freshness is a product surface
+
+<Warning>
+**Partly built.** The rules are built; the automation is not. Every published field carries a `last_verified_at` date and the publish gate refuses a field without one; a per-vendor **source registry** records what backs each field and where; and the **re-verification semantics** below — when a date may advance, and when it may not — are implemented and tested. What does not exist yet is the scheduler that re-reads those sources on a cadence, or the change log and watchlist alerts built on top of it. So nothing re-confirms a field automatically: today a date advances when an analyst re-reviews the fact and is recorded as having done so.
+</Warning>
+
+### What may advance a date
+
+Built. `last_verified_at` is only worth reading if it cannot move for the wrong reason — if a date could advance because a crawler ran rather than because the fact was re-confirmed, it degrades into *the date we last ran a crawler*. So a re-read resolves each field into one of three outcomes, and only one of them advances anything:
+
+| Outcome | Meaning | Date |
+| --- | --- | --- |
+| **Confirmed** | The source still says what the catalog says | Advances |
+| **Changed** | The source now says something else | Stays put — the change is reported for review, and the new value is **not** written silently |
+| **Unconfirmed** | The field could not be found on the page — moved, reworded, or removed | Stays put |
+
+Two rules follow from this, and both are enforced rather than intended:
+
+- **Confirmation is per field, never per page.** A re-read of a trust centre backing six fields confirms only the fields it could actually locate there — not all six because the fetch succeeded.
+- **Silence is not confirmation.** A field the re-read never mentioned is treated as unconfirmed, so it ages honestly rather than riding along on its neighbours.
+
+An analyst can also confirm a field by hand, but only **attributed to a person**: not every fact has a machine-readable source, and a signed-off human read is a legitimate confirmation where an anonymous one is not. The two are recorded distinguishably, so a date advanced by judgement is never mistaken for one a source confirmed.
+
+### The source registry
+
+Built. Rather than re-reading the free-text citation on each field, ATX keeps a per-vendor registry of the sources themselves — trust centres, model cards, certification registries, privacy policies, status pages, incident feeds — with fetch metadata and health on each. It was backfilled from the citations already on every published field, so it started with real coverage rather than empty.
+
+A source that fails repeatedly is **flagged as dead rather than quietly skipped**, because a vendor removing their trust centre is a posture change in disguise, and exactly the sort of thing a reviewer needs told. Source types are assigned by a URL heuristic that is labelled as one: an unrecognised URL is classified as *other* rather than given a confident wrong guess.
+
+Due diligence has a shelf life. A profile describing last quarter's posture is not merely less useful than a current one — for this job it is worthless, and a reviewer who trusts it is worse off than one who knew they had nothing.
+
+So currency is treated as a feature with its own machinery:
+
+<CardGroup cols={2}>
+  <Card title="Continuous re-verification" icon="rotate">
+    *Not built yet.* Trust centres, model cards, certification registries, and incident feeds are re-crawled on a schedule, with the cadence tied to the vendor's risk tier. The registry of what to re-read exists; the scheduler that reads it does not.
+  </Card>
+  <Card title="Dates that must be earned" icon="calendar-check">
+    A field's `last_verified_at` advances **only** when the fact is re-confirmed against its source. Nothing is refreshed by the passage of a crawl.
+  </Card>
+  <Card title="Change detection" icon="code-compare">
+    *Not built yet.* Posture is diffed over time. A new sub-processor, a dropped certification, a model swap, or a new incident becomes a typed change event on a public change log and a machine-readable feed.
+  </Card>
+  <Card title="Staleness surfaced everywhere" icon="triangle-exclamation">
+    Profiles, Ask ATX answers, and exported reports all show per-field verified dates and flag anything past its re-verification window.
+  </Card>
+</CardGroup>
+
+Watchlists ride on the same change events: a member following a vendor is notified when a material posture change lands, which is what turns a one-off lookup into ongoing diligence.
+
+## The three-tier data model
+
+Behind the profile sit three separate layers, because "a vendor" means something different at each:
+
+```
+Canonical Vendor Catalog     global; analyst, crawler and enrichment owned
+                             every field source-cited with a verified date
+        ▲ aggregates (anonymized, opt-in)
+Member Contributions         member-private by default
+                             opt-in sharing feeds catalog signals
+        ▼ derives
+Public Trust Profile         summary free; full report gated on contribution
+```
+
+Public reads are unscoped, member contributions are scoped to the member who made them, and the canonical catalog is global. See [The assessment exchange](/ai-vendor-trust-exchange/exchange) for how a contribution travels between those layers.
+
+<Card title="Ask ATX" icon="comments" href="/ai-vendor-trust-exchange/ask-atx">
+  How these fields are queried in plain language — and why every claim in an answer resolves back to one of them.
+</Card>

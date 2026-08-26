@@ -85,6 +85,22 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "AI Vendor Trust Exchange",
+        "groups": [
+          {
+            "group": "AI Vendor Trust Exchange",
+            "pages": [
+              "ai-vendor-trust-exchange/introduction",
+              "ai-vendor-trust-exchange/trust-profiles",
+              "ai-vendor-trust-exchange/ask-atx",
+              "ai-vendor-trust-exchange/exchange",
+              "ai-vendor-trust-exchange/independence",
+              "ai-vendor-trust-exchange/pricing"
+            ]
+          }
+        ]
       }
     ]
   },
