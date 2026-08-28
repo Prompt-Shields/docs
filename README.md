@@ -90,5 +90,6 @@ This repository documents the free components in full. Cloud-only capabilities a
 - Published site: [docs.promptshields.com](https://docs.promptshields.com)
 - Product: [promptshields.com](https://promptshields.com)
 - SDK and gateway source: [Prompt-Shields/prompt-shields-sdk](https://github.com/Prompt-Shields/prompt-shields-sdk)
-- Security policy: report documentation issues that disclose a vulnerability privately to security@promptshields.com rather than opening a public issue. This repository has no `SECURITY.md`; the canonical policy is [prompt-shields-sdk/SECURITY.md](https://github.com/Prompt-Shields/prompt-shields-sdk/blob/main/SECURITY.md).
-- Contributing: this repository has no `CONTRIBUTING.md`. Follow the house rules above and open a pull request against `main`.
+- Security policy: [SECURITY.md](SECURITY.md) — report vulnerabilities privately to security@promptshields.com, never via a public issue
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
