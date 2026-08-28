@@ -1,0 +1,63 @@
+---
+title: "Ask ATX"
+description: "A plain-language question over the catalog, answered with a cited, ranked shortlist."
+icon: "comments"
+---
+
+<Warning>
+**Not yet built.** The catalog and profile pages Ask ATX reads from are live, but the query box, the retrieval pipeline and the grounded answer are still ahead. This page describes the design.
+</Warning>
+
+Ask ATX is the **front door** — a natural-language query box sitting on top of the public directory.
+
+> *"LLM providers that are SOC 2 and ISO 42001 certified and don't train on customer data"*
+
+A reviewer types the question they actually have, and gets a short summary plus a ranked vendor shortlist where **every factual claim links to the specific field it came from and the date that field was last verified**.
+
+## The pipeline
+
+<Steps>
+  <Step title="Query understanding">
+    The natural-language question is split into structured filters — category, certifications, compliance posture, data flows, deployment model — plus the free-text intent that no filter captures.
+  </Step>
+  <Step title="Hybrid retrieval">
+    A structured filter runs over the canonical catalog, a semantic retrieval runs over profile text via pgvector embeddings, and the two result sets are combined and reranked. Structured alone misses paraphrase; semantic alone misses hard constraints like a named certification.
+  </Step>
+  <Step title="Grounded answer">
+    A model composes the summary and the shortlist **from retrieved fields only**. Each claim cites its source-cited field and its verified date; answers are framed as grounded opinion, never as an unattributed verdict.
+  </Step>
+</Steps>
+
+## It sits inside the firewall
+
+This is the part that is easy to get wrong. A conversational recommender that ranks on anything a vendor can buy is a pay-to-play engine wearing a chat interface — and it carries exactly the same defamation and independence exposure as a bought rating, with less of the scrutiny.
+
+So the same rules that govern a published rating govern the answer box:
+
+- Retrieval and ranking draw **only** on independent trust data — `verified` and `crowd` provenance, and published ratings.
+- Vendor-claimed commercial fields and any vendor spend are **never** ranking inputs.
+- Every factual claim cites its field and its `last_verified_at`.
+- Fields past their re-verification window are flagged in the answer, not silently presented as current.
+
+This is enforced by isolation tests asserting that no commercial datum can enter the retrieval or ranking path — a test that proves the boundary, rather than a comment claiming it. See [Independence](/ai-vendor-trust-exchange/independence).
+
+## Quality is measured, not asserted
+
+A grounded-answer system fails quietly: it keeps producing fluent, plausible answers as its retrieval degrades. The design guards against that with a fixed evaluation set of canonical due-diligence queries and their expected shortlists, run in CI — so a regression in retrieval shows up as a failing build rather than as a slightly worse answer nobody notices.
+
+<Note>
+The first version answers a single question at a time. Multi-turn refinement — follow-ups and session memory — is a planned follow-on, not part of the initial capability.
+</Note>
+
+## Queries as signal
+
+Questions asked of Ask ATX are captured in anonymized form as **buyer-intent signal**: what the market is evaluating, against which constraints, and when. It is a genuinely valuable data asset, and it is covered by a privacy notice that says plainly what is retained.
+
+<CardGroup cols={2}>
+  <Card title="Trust profiles" icon="id-card" href="/ai-vendor-trust-exchange/trust-profiles">
+    The fields every answer is grounded in, and how their verified dates are maintained.
+  </Card>
+  <Card title="Independence" icon="scale-balanced" href="/ai-vendor-trust-exchange/independence">
+    Why the ranking path and the commercial path are separate services.
+  </Card>
+</CardGroup>

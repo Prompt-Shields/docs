@@ -20,12 +20,15 @@ npx mint@latest broken-links
 
 **Mintlify is a documentation platform that renders MDX files into a hosted site using a JSON navigation manifest.** Pages are plain MDX; `docs.json` defines the site structure. There is no application code in this repository.
 
+The site carries four product tabs: **PromptShields**, **AI Token Lens**, **Agent Sentinel**, and the **AI Vendor Trust Exchange**.
+
 ```
   docs.json ................ site config and navigation tree
       |
       +-- introduction.mdx ....... what the product is, rollout sequence
       +-- how-it-works.mdx ....... detection and telemetry pipeline, end to end
-      +-- data-handling.mdx ...... what is collected, what never leaves the device
+      +-- data-handling.mdx ...... what is collected, what never leaves the
+      |                            device, storage per platform
       |
       +-- deploy/ ................ browser extension, macOS agent,
       |                            Windows agent, MDM rollout
@@ -34,7 +37,13 @@ npx mint@latest broken-links
       +-- developers/ ............ Python SDK, AI gateway, self-host,
       |                            registry API, confidence scoring
       +-- troubleshooting.mdx .... cross-client failure modes
-                |
+      |
+      +-- ai-token-lens/ ......... AI spend ledger across cloud, SaaS
+      |                            seats, and agents
+      +-- agent-sentinel/ ........ macOS menu-bar monitor and kill switch
+      |                            for desktop AI agents
+      +-- ai-vendor-trust-exchange/  public trust and due-diligence layer
+                |                    for AI vendors
                 v
       commit to main --> automatic deploy --> docs.promptshields.com
 ```
