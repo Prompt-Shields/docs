@@ -20,6 +20,12 @@ npx mint@latest broken-links
 
 **Mintlify is a documentation platform that renders MDX files into a hosted site using a JSON navigation manifest.** Pages are plain MDX; `docs.json` defines the site structure. There is no application code in this repository.
 
+![The rendered documentation site: three product tabs across the top, the Overview, Deploy, Administer and Developers groups down the left, and the page contents on the right](docs/images/docs-site-introduction.png)
+
+The three tabs at the top — PromptShields, AI Token Lens, Agent Sentinel — are separate products sharing one site. The left-hand groups follow the audience split described below.
+
+![The Developer overview page, showing the client-side and code-side split feeding a single telemetry collector and asset registry](docs/images/docs-site-developers.png)
+
 ```
   docs.json ................ site config and navigation tree
       |
