@@ -1,0 +1,98 @@
+---
+title: "AI Vendor Trust Exchange"
+description: "A public, source-cited trust layer for AI vendors — independent by construction."
+icon: "building-shield"
+---
+
+<Note>
+**In development — partly built.** There is no hosted service to sign up for yet. Some of what follows runs today; the rest is designed and not yet built.
+
+| Built | Not yet built |
+| --- | --- |
+| The canonical catalog and trust profiles, with provenance and verified dates on every published field | [Ask ATX](/ai-vendor-trust-exchange/ask-atx) — the natural-language front door |
+| The publish-time gate that refuses an unsourced or undated field | [The assessment exchange](/ai-vendor-trust-exchange/exchange) and give-to-get unlocking |
+| Directory search and facets, the server-rendered SEO surface, and public category, collection and [side-by-side comparison](/ai-vendor-trust-exchange/trust-profiles#comparing-two-vendors-side-by-side) pages | Scheduled re-crawling, change events, and the public change log |
+| The source registry and the [field-level re-verification rules](/ai-vendor-trust-exchange/trust-profiles#what-may-advance-a-date), plus the public methodology and ratings-independence policy pages | Trust ratings, crowd reviews, and the vendor portal |
+
+Individual pages repeat this where it matters.
+</Note>
+
+The AI Vendor Trust Exchange (**ATX**) is a public, web-first platform for **technology and security due diligence on AI vendors**. A buyer looks up an AI tool and gets a source-cited, always-current read on how it handles data, what it is built on, and whether it is safe to adopt or renew.
+
+## The question it answers
+
+Every AI purchase eventually reaches one reviewer asking one thing: *is it safe to adopt this vendor?* Answering it means knowing which foundation models sit underneath, who the sub-processors are, whether the vendor trains on your data, which certifications actually hold, and what has gone wrong before.
+
+Today that answer is produced by a bespoke questionnaire, takes weeks, and is **stale the day it is delivered**. AI vendors ship changes weekly; a posture assessment written last quarter describes a product that no longer exists.
+
+## Why nothing existing covers it
+
+<CardGroup cols={3}>
+  <Card title="AI-governance platforms" icon="clipboard-check">
+    Have the risk taxonomy, but are buyer-private. Nothing is shared, nothing is public.
+  </Card>
+  <Card title="Vendor-trust exchanges" icon="right-left">
+    Proved the shared-assessment model works, but are security-only — not AI-specific.
+  </Card>
+  <Card title="AI directories" icon="list">
+    Have reach and traffic, but no real trust layer underneath the listings.
+  </Card>
+</CardGroup>
+
+Nobody offers a public, browsable, continuously re-verified trust directory for AI vendors. That gap is what ATX is built for.
+
+## The forcing function
+
+**EU AI Act Article 26** places due-diligence obligations on *deployers* — the buyers — of high-risk AI, enforceable from **2 August 2026**. Every organisation adopting AI is about to be compelled to produce exactly the vendor-trust evidence this exchange aggregates.
+
+That matters for more than urgency. It means contribution is a **byproduct of work buyers must do anyway**, which is what makes a shared exchange viable rather than charitable.
+
+## The two sides
+
+| Side | What they do | What they get |
+| --- | --- | --- |
+| **Buyers** — security review, procurement, GRC | Browse trust profiles; as members, contribute the vendor assessments they already run | Peers' normalized, source-cited assessments in return — *give-to-get* |
+| **Vendors** | Claim their profile, keep their own data current, respond to findings | Reduced questionnaire load and a right of reply — **never** influence over their trust score |
+
+Both feed one shared dataset. See [The assessment exchange](/ai-vendor-trust-exchange/exchange).
+
+## Three properties that define it
+
+<Steps>
+  <Step title="Freshness is the product">
+    Every field carries a `last_verified_at` date that advances only on re-confirmation — a rule the code enforces, down to *silence is not confirmation*. The automation that will exercise it — re-crawling sources on a cadence, diffing posture into a visible change log, flagging anything past its window — is designed and not built yet. See [Trust profiles](/ai-vendor-trust-exchange/trust-profiles).
+  </Step>
+  <Step title="Provenance is first-class">
+    Every published field is tagged `verified`, `vendor_claimed`, or `crowd`, and links to its source. A field with no provenance does not ship.
+  </Step>
+  <Step title="Independence is structural">
+    Money can buy presence and support. It can never buy a rating input, a ranking position, or an answer. This is enforced by separate services and isolation tests, not by policy alone. See [Independence](/ai-vendor-trust-exchange/independence).
+  </Step>
+</Steps>
+
+## What it is not
+
+- **Not a GRC workflow tool.** It is a public intelligence layer, not an internal control plane. It does not run your approval process.
+- **Not a compliance certification.** ATX publishes source-cited findings; it does not audit or certify anyone.
+- **Not an outside-in security scanner.** Ratings are analyst-assessed and attested against public evidence. Continuous scanning is not part of the design as it stands.
+- **Not real-time.** Re-verification runs on a cadence tied to risk tier, and the profile says when each field was last confirmed.
+
+## Where to go next
+
+<CardGroup cols={2}>
+  <Card title="Trust profiles" icon="id-card" href="/ai-vendor-trust-exchange/trust-profiles">
+    The two field blocks, provenance tags, side-by-side comparison, and how freshness and change tracking work.
+  </Card>
+  <Card title="Ask ATX" icon="comments" href="/ai-vendor-trust-exchange/ask-atx">
+    The natural-language front door — how a plain question becomes a cited shortlist.
+  </Card>
+  <Card title="The assessment exchange" icon="right-left" href="/ai-vendor-trust-exchange/exchange">
+    Give-to-get, contribution normalization, and the four trust boundaries.
+  </Card>
+  <Card title="Independence" icon="scale-balanced" href="/ai-vendor-trust-exchange/independence">
+    The firewall between vendor money and any verdict, and why it is load-bearing.
+  </Card>
+  <Card title="Pricing and support" icon="tag" href="/ai-vendor-trust-exchange/pricing">
+    Open source and free to run, with custom support available on request.
+  </Card>
+</CardGroup>

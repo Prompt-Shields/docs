@@ -20,9 +20,9 @@ npx mint@latest broken-links
 
 **Mintlify is a documentation platform that renders MDX files into a hosted site using a JSON navigation manifest.** Pages are plain MDX; `docs.json` defines the site structure. There is no application code in this repository.
 
-![The rendered documentation site: three product tabs across the top, the Overview, Deploy, Administer and Developers groups down the left, and the page contents on the right](docs/images/docs-site-introduction.png)
+![The rendered documentation site: the product tabs across the top, the Overview, Deploy, Administer and Developers groups down the left, and the page contents on the right](docs/images/docs-site-introduction.png)
 
-The three tabs at the top — PromptShields, AI Token Lens, Agent Sentinel — are separate products sharing one site. The left-hand groups follow the audience split described below.
+The site carries four product tabs: **PromptShields**, **AI Token Lens**, **Agent Sentinel**, and the **AI Vendor Trust Exchange** — separate products sharing one site. The left-hand groups follow the audience split described below.
 
 ![The Developer overview page, showing the client-side and code-side split feeding a single telemetry collector and asset registry](docs/images/docs-site-developers.png)
 
@@ -31,7 +31,8 @@ The three tabs at the top — PromptShields, AI Token Lens, Agent Sentinel — a
       |
       +-- introduction.mdx ....... what the product is, rollout sequence
       +-- how-it-works.mdx ....... detection and telemetry pipeline, end to end
-      +-- data-handling.mdx ...... what is collected, what never leaves the device
+      +-- data-handling.mdx ...... what is collected, what never leaves the
+      |                            device, storage per platform
       |
       +-- deploy/ ................ browser extension, macOS agent,
       |                            Windows agent, MDM rollout
@@ -40,7 +41,13 @@ The three tabs at the top — PromptShields, AI Token Lens, Agent Sentinel — a
       +-- developers/ ............ Python SDK, AI gateway, self-host,
       |                            registry API, confidence scoring
       +-- troubleshooting.mdx .... cross-client failure modes
-                |
+      |
+      +-- ai-token-lens/ ......... AI spend ledger across cloud, SaaS
+      |                            seats, and agents
+      +-- agent-sentinel/ ........ macOS menu-bar monitor and kill switch
+      |                            for desktop AI agents
+      +-- ai-vendor-trust-exchange/  public trust and due-diligence layer
+                |                    for AI vendors
                 v
       commit to main --> automatic deploy --> docs.promptshields.com
 ```

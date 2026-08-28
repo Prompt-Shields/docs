@@ -1,0 +1,78 @@
+---
+title: "The assessment exchange"
+description: "Give-to-get: contribute the assessment you had to run anyway, unlock everyone else's."
+icon: "right-left"
+---
+
+<Warning>
+**Not yet built.** The free-versus-gated boundary exists in the code, but nothing is gated yet — there is no membership, no contribution intake, and no normalization engine. Everything below is the design.
+</Warning>
+
+The directory is useful on day one because it is analyst-seeded. It becomes hard to replicate because **members contribute the vendor assessments they are already required to run**, and consumption is gated on contribution.
+
+## The flywheel
+
+<Steps>
+  <Step title="Seed">
+    Analyst-authored, source-cited profiles in a narrow vertical make the site useful with zero users. No cold-start dependency on contributions that do not exist yet.
+  </Step>
+  <Step title="Contribute">
+    A member uploads a questionnaire or assessment they completed for their own diligence. It stays member-private by default.
+  </Step>
+  <Step title="Normalize">
+    Heterogeneous member paperwork is mapped into one shared AI-trust schema — model-assisted, with per-field confidence scoring, and human-reviewed before anything reaches the catalog.
+  </Step>
+  <Step title="Unlock">
+    Contribution grants entitlement to full reports. The free tier sees summaries.
+  </Step>
+  <Step title="Compound">
+    Opt-in shared contributions are anonymized and aggregated into catalog signals. Depth and freshness improve, more buyers arrive, and using the exchange refills it.
+  </Step>
+</Steps>
+
+## Normalization is the hard part
+
+Turning incompatible member paperwork into comparable signal is the defensible core of the exchange, and it is also the single largest piece of work in it. Three distinct problems hide inside the word "normalize":
+
+| Problem | What it takes |
+| --- | --- |
+| **The target schema** | Defining the shared AI-trust vocabulary that every contribution maps into — the thing that makes two different questionnaires comparable at all |
+| **The mapping** | Model-assisted field mapping from arbitrary input formats, with a confidence score attached per field rather than a silent best guess |
+| **The human loop** | A review and correction queue. Nothing reaches the canonical catalog unreviewed |
+
+Treating this as one task is the most likely way to get it wrong, which is why it is planned as three.
+
+## What "full report" means
+
+<Note>
+At launch there are no peer contributions yet, so the gated full report is the **analyst-seeded full trust profile** — not aggregated peer data. The free-versus-gated boundary is built against the seeded profile, and peer-contributed depth accretes into that report as the exchange fills.
+</Note>
+
+Saying so plainly matters: an exchange that implies peer depth it does not yet have spends the credibility it needs to acquire that depth.
+
+## Four audiences, three boundaries
+
+Authorization is written against these boundaries, and tested against them:
+
+| Audience | Auth | Can do |
+| --- | --- | --- |
+| **Public** | None | Ask ATX, browse the directory, read profile summaries, compare two vendors side by side, read the published methodology |
+| **Member** | Work-email verification | Contribute assessments, unlock full reports, compare those full reports, keep watchlists |
+| **Vendor** | Ownership proof — DNS or email domain | Claim a profile, publish `vendor_claimed` data, exercise right-to-respond |
+| **Analyst / admin** | Internal | Curate the canonical catalog, run and publish ratings, moderate |
+
+Two verifications that look similar are kept deliberately separate: **contributor verification** establishes that a person is a real practitioner, while **vendor claiming** proves ownership of a company. Different flows, different evidence, different trust levels.
+
+<Warning>
+Member contributions are private to the member who made them unless explicitly shared, and sharing anonymizes on aggregation. Cross-member isolation is proven by an authorization test suite rather than assumed from the schema.
+</Warning>
+
+## What members get out of it
+
+- **Full, dated, source-cited due-diligence reports**, exportable for an audit file
+- **Watchlists and change alerts** — notification when a vendor's posture materially changes, riding on the same change events that drive the [profile change log](/ai-vendor-trust-exchange/trust-profiles#freshness-is-a-product-surface)
+- **Questionnaire relief** — an answer that already exists, current, instead of another bespoke round trip
+
+<Card title="Independence" icon="scale-balanced" href="/ai-vendor-trust-exchange/independence">
+  Why contributing to the exchange never buys a vendor a better score — including your own vendors.
+</Card>

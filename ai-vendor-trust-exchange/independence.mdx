@@ -1,0 +1,75 @@
+---
+title: "Independence"
+description: "Money buys support and presence, never a verdict — enforced by separate services, not by promises."
+icon: "scale-balanced"
+---
+
+ATX publishes ratings on named companies, and takes money from some of them — vendors can claim a profile and keep their own data current, and either side can pay for [custom support](/ai-vendor-trust-exchange/pricing). Those two facts pull in opposite directions, and the second is worthless if it contaminates the first.
+
+Handled carelessly, buyers assume every rating was bought and the entire trust proposition collapses. So the boundary is treated as a structural property of the system rather than a promise in a footer.
+
+## The rule
+
+<Warning>
+**Money may touch presence, support, and a vendor's own data. It may never touch a rating input, a ranking input, reviewer selection, or expert selection.**
+</Warning>
+
+| Payment may reach | Payment may never reach |
+| --- | --- |
+| Profile presence and claiming | Any input to a trust score |
+| Right-to-respond | The ranking of an [Ask ATX](/ai-vendor-trust-exchange/ask-atx) answer |
+| Keeping a vendor's **own** data current | Which practitioners' reviews are shown |
+| Custom support, deployment, and integration work | Which experts are selected or surfaced |
+| Deep assessment engagements, kept separate from the rating | The methodology used to score them |
+
+## How it is enforced
+
+Policy alone does not survive a quarter with a revenue target, and an open codebase does not enforce it either. Four mechanisms carry the boundary instead.
+
+<Note>
+**Partly built.** The public policy page and the block-level rule are live — the code knows that the Business block never feeds a rating, and a test holds it there. The rest arrives with the rating engine, which is not built yet: there is nothing to isolate from until there is a rating to protect.
+</Note>
+
+<CardGroup cols={2}>
+  <Card title="Separate data paths" icon="network-wired">
+    The rating engine and the vendor-commercial modules run as separate services. The commercial tables are not reachable from the rating path — and a test proves the unreachability rather than asserting it.
+  </Card>
+  <Card title="Restricted inputs" icon="filter">
+    The rating engine accepts `verified` and `crowd` provenance plus analyst inputs. `vendor_claimed` commercial fields are structurally ineligible as inputs, not filtered out downstream.
+  </Card>
+  <Card title="Isolation tests in CI" icon="vial">
+    Any change touching the boundary requires a test demonstrating the isolation and a second reviewer. Every paid surface is audited in CI as orthogonal to score and to ranking.
+  </Card>
+  <Card title="A public policy" icon="file-contract">
+    The ratings-independence policy and the methodology publish as public pages — live now, ahead of the first rating, so the rule is checkable from outside before there is anything to check it against.
+  </Card>
+</CardGroup>
+
+## Why ratings are framed as opinion
+
+Publishing a named company's security posture invites a defamation claim. The posture that survives one is well established, and ATX follows it:
+
+- **Factual, dated, and source-linked.** Every rating input traces to a specific public source with the date it was confirmed.
+- **Opinion grounded in disclosed facts**, never an editorialized verdict. The methodology is public and versioned, so a reader can see how facts became a score.
+- **Right-to-respond, exercised before publication.** A vendor sees findings and can respond on the record ahead of a rating going live, not after.
+
+This is also why [provenance](/ai-vendor-trust-exchange/trust-profiles#provenance-on-every-field) is mandatory on every field. A rating assembled from unattributed claims is indefensible in both senses — legally, and to the reviewer deciding whether to trust it.
+
+## Keeping the layers distinct
+
+Crowd reviews and trust ratings answer different questions and are kept **visually and structurally separate** on a profile. An aggregated review score reflects practitioner experience; a trust rating reflects source-cited posture. Blending them would let sentiment leak into a security verdict — and would make a brigading campaign a way to move a rating.
+
+## The commercial argument
+
+The firewall is usually described as a constraint on the business model. It is better read as the business model.
+
+Independence is the only reason a buyer would consult a public trust directory rather than a vendor's own marketing, and it is the thing incumbents extending into this space would find hardest to retrofit. Published as a policy and demonstrated in code, it is a differentiator — which is why it ships on day one rather than once ratings arrive.
+
+<CardGroup cols={2}>
+  <Card title="Pricing and support" icon="tag" href="/ai-vendor-trust-exchange/pricing">
+    Open source, and why paying for support still buys no influence over a score.
+  </Card>
+  <Card title="Back to the overview" icon="building-shield" href="/ai-vendor-trust-exchange/introduction">
+    What ATX is, the gap it fills, and the regulation driving it.
+  </Card>
+</CardGroup>
