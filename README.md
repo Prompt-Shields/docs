@@ -9,7 +9,7 @@ A security control that nobody can deploy correctly is not a control. Endpoint A
 ## Quickstart
 
 ```bash
-git clone https://github.com/Bit-Pulse-AI/docs.git && cd docs
+git clone https://github.com/Prompt-Shields/docs.git && cd docs
 npx mint@latest dev
 npx mint@latest broken-links
 ```
@@ -20,7 +20,11 @@ npx mint@latest broken-links
 
 **Mintlify is a documentation platform that renders MDX files into a hosted site using a JSON navigation manifest.** Pages are plain MDX; `docs.json` defines the site structure. There is no application code in this repository.
 
-The site carries four product tabs: **PromptShields**, **AI Token Lens**, **Agent Sentinel**, and the **AI Vendor Trust Exchange**.
+![The rendered documentation site: the product tabs across the top, the Overview, Deploy, Administer and Developers groups down the left, and the page contents on the right](docs/images/docs-site-introduction.png)
+
+The site carries four product tabs: **PromptShields**, **AI Token Lens**, **Agent Sentinel**, and the **AI Vendor Trust Exchange** — separate products sharing one site. The left-hand groups follow the audience split described below.
+
+![The Developer overview page, showing the client-side and code-side split feeding a single telemetry collector and asset registry](docs/images/docs-site-developers.png)
 
 ```
   docs.json ................ site config and navigation tree
@@ -85,6 +89,6 @@ This repository documents the free components in full. Cloud-only capabilities a
 
 - Published site: [docs.promptshields.com](https://docs.promptshields.com)
 - Product: [promptshields.com](https://promptshields.com)
-- SDK and gateway source: [Bit-Pulse-AI/prompt-shields-sdk](https://github.com/Bit-Pulse-AI/prompt-shields-sdk)
-- Security policy: report documentation issues that disclose a vulnerability privately to security@promptshields.com rather than opening a public issue. This repository has no `SECURITY.md`; the canonical policy is [prompt-shields-sdk/SECURITY.md](https://github.com/Bit-Pulse-AI/prompt-shields-sdk/blob/main/SECURITY.md).
+- SDK and gateway source: [Prompt-Shields/prompt-shields-sdk](https://github.com/Prompt-Shields/prompt-shields-sdk)
+- Security policy: report documentation issues that disclose a vulnerability privately to security@promptshields.com rather than opening a public issue. This repository has no `SECURITY.md`; the canonical policy is [prompt-shields-sdk/SECURITY.md](https://github.com/Prompt-Shields/prompt-shields-sdk/blob/main/SECURITY.md).
 - Contributing: this repository has no `CONTRIBUTING.md`. Follow the house rules above and open a pull request against `main`.
