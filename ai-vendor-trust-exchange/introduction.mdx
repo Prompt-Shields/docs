@@ -10,9 +10,10 @@ icon: "building-shield"
 | Built | Not yet built |
 | --- | --- |
 | The canonical catalog and trust profiles, with provenance and verified dates on every published field | [Ask ATX](/ai-vendor-trust-exchange/ask-atx) — the natural-language front door |
-| The publish-time gate that refuses an unsourced or undated field | [The assessment exchange](/ai-vendor-trust-exchange/exchange) and give-to-get unlocking |
-| Directory search and facets, the server-rendered SEO surface, and public category, collection and [side-by-side comparison](/ai-vendor-trust-exchange/trust-profiles#comparing-two-vendors-side-by-side) pages | Scheduled re-crawling, change events, and the public change log |
-| The source registry and the [field-level re-verification rules](/ai-vendor-trust-exchange/trust-profiles#what-may-advance-a-date), plus the public methodology and ratings-independence policy pages | Trust ratings, crowd reviews, and the vendor portal |
+| The publish-time gate, the source registry, and the [field-level re-verification rules](/ai-vendor-trust-exchange/trust-profiles#what-may-advance-a-date) | **Give-to-get unlocking** — contributing does not yet unlock anything |
+| Scheduled re-crawling, typed change events, the public change log and change feeds, and staleness surfacing | Trust ratings, crowd reviews, and the vendor portal |
+| Member accounts, contribution intake, the shared normalization schema, model-assisted mapping, and the human review queue | — |
+| Directory search and facets, the SEO surface, public category, collection and [side-by-side comparison](/ai-vendor-trust-exchange/trust-profiles#comparing-two-vendors-side-by-side) pages, and the public policy pages | — |
 
 Individual pages repeat this where it matters.
 </Note>
@@ -60,7 +61,7 @@ Both feed one shared dataset. See [The assessment exchange](/ai-vendor-trust-exc
 
 <Steps>
   <Step title="Freshness is the product">
-    Every field carries a `last_verified_at` date that advances only on re-confirmation — a rule the code enforces, down to *silence is not confirmation*. The automation that will exercise it — re-crawling sources on a cadence, diffing posture into a visible change log, flagging anything past its window — is designed and not built yet. See [Trust profiles](/ai-vendor-trust-exchange/trust-profiles).
+    Every field carries a `last_verified_at` date that advances only on re-confirmation — a rule the code enforces, down to *silence is not confirmation*. The automation now exercises it: sources are re-crawled on their cadence, posture changes are diffed into typed events on a public change log, and anything past its window is flagged. See [Trust profiles](/ai-vendor-trust-exchange/trust-profiles).
   </Step>
   <Step title="Provenance is first-class">
     Every published field is tagged `verified`, `vendor_claimed`, or `crowd`, and links to its source. A field with no provenance does not ship.

@@ -67,9 +67,9 @@ Category and curated collection pages work the same way: generated only where th
 
 ## Freshness is a product surface
 
-<Warning>
-**Partly built.** The rules are built; the automation is not. Every published field carries a `last_verified_at` date and the publish gate refuses a field without one; a per-vendor **source registry** records what backs each field and where; and the **re-verification semantics** below — when a date may advance, and when it may not — are implemented and tested. What does not exist yet is the scheduler that re-reads those sources on a cadence, or the change log and watchlist alerts built on top of it. So nothing re-confirms a field automatically: today a date advances when an analyst re-reviews the fact and is recorded as having done so.
-</Warning>
+<Note>
+**Built.** The rules and the automation both exist now. Every published field carries a `last_verified_at` date that only advances on re-confirmation; a per-vendor **source registry** records what backs each field; a scheduled worker re-crawls sources whose cadence says they are due; posture differences become **typed, judged change events**; and the change log, the change feeds and the staleness flags are all public. Watchlist alerts are the one piece still outstanding — they belong to the exchange, and ride on these same change events.
+</Note>
 
 ### What may advance a date
 
@@ -100,13 +100,13 @@ So currency is treated as a feature with its own machinery:
 
 <CardGroup cols={2}>
   <Card title="Continuous re-verification" icon="rotate">
-    *Not built yet.* Trust centres, model cards, certification registries, and incident feeds are re-crawled on a schedule, with the cadence tied to the vendor's risk tier. The registry of what to re-read exists; the scheduler that reads it does not.
+    Trust centres, model cards, certification registries, and incident feeds are re-crawled on a schedule, with the cadence tied to the vendor's risk tier. A pass only touches sources that are actually due, so running it often stays cheap.
   </Card>
   <Card title="Dates that must be earned" icon="calendar-check">
     A field's `last_verified_at` advances **only** when the fact is re-confirmed against its source. Nothing is refreshed by the passage of a crawl.
   </Card>
   <Card title="Change detection" icon="code-compare">
-    *Not built yet.* Posture is diffed over time. A new sub-processor, a dropped certification, a model swap, or a new incident becomes a typed change event on a public change log and a machine-readable feed.
+    Posture is diffed over time. A new sub-processor, a dropped certification, a model swap, or a new incident becomes a typed change event on a public change log and a machine-readable feed.
   </Card>
   <Card title="Staleness surfaced everywhere" icon="triangle-exclamation">
     Profiles, Ask ATX answers, and exported reports all show per-field verified dates and flag anything past its re-verification window.
@@ -114,6 +114,19 @@ So currency is treated as a feature with its own machinery:
 </CardGroup>
 
 Watchlists ride on the same change events: a member following a vendor is notified when a material posture change lands, which is what turns a one-off lookup into ongoing diligence.
+
+## Change events, and which ones matter
+
+Built. Diffing two values is the easy half. The hard half is deciding whether a difference is a **posture change** at all: a vendor rewording a paragraph of their DPA is not one; dropping SOC 2 is.
+
+Getting that judgement wrong is costly in both directions, so it is made explicitly rather than left to a diff:
+
+- **Too noisy** and watchlist alerts become worthless, members switch them off, and the feature is dead.
+- **Too quiet** and the freshness guarantee is a lie.
+
+So changes are **typed** — a new sub-processor, a dropped certification, a model swap, a new incident — because a type tells a reviewer what happened where a bare "field updated" makes them go and look. Immaterial changes are still recorded; they simply do not alert.
+
+The result is public: a change log on each profile, plus RSS change feeds for the whole catalog and per vendor.
 
 ## The three-tier data model
 

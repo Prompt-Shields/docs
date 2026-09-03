@@ -4,9 +4,9 @@ description: "Give-to-get: contribute the assessment you had to run anyway, unlo
 icon: "right-left"
 ---
 
-<Warning>
-**Not yet built.** The free-versus-gated boundary exists in the code, but nothing is gated yet — there is no membership, no contribution intake, and no normalization engine. Everything below is the design.
-</Warning>
+<Note>
+**Mostly built — except the part that makes it an exchange.** Member accounts, contribution intake, the shared normalization schema, the model-assisted mapping and the human review queue all exist. What does not exist is the **unlocking**: entitlements still deny everyone, so contributing earns nothing back yet, and every reader sees the free summary. Watchlists and alerts are also outstanding. Until the gate opens this is a contribution pipeline rather than a give-to-get exchange, and the sections below describe the design it is being built toward.
+</Note>
 
 The directory is useful on day one because it is analyst-seeded. It becomes hard to replicate because **members contribute the vendor assessments they are already required to run**, and consumption is gated on contribution.
 
@@ -40,7 +40,12 @@ Turning incompatible member paperwork into comparable signal is the defensible c
 | **The mapping** | Model-assisted field mapping from arbitrary input formats, with a confidence score attached per field rather than a silent best guess |
 | **The human loop** | A review and correction queue. Nothing reaches the canonical catalog unreviewed |
 
-Treating this as one task is the most likely way to get it wrong, which is why it is planned as three.
+Treating this as one task is the most likely way to get it wrong, which is why it was built as three.
+
+All three now exist. Two details of the third are worth stating, because they are where the guarantee actually lives:
+
+- **Nothing reaches catalog signals without a named reviewer.** A contribution is publishable only from a confirmed or corrected review state, and the only function that changes that state also writes the record of who changed it and when. There is no path forward that leaves no attribution.
+- **Bulk-accept is not switched on.** It exists, but whether any confidence band has earned it is decided from measured accuracy rather than a chosen constant — and today none has. A threshold picked by intuition would make the whole control theatre, so the refusal is the feature.
 
 ## What "full report" means
 
