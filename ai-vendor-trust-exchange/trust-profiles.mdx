@@ -68,7 +68,7 @@ Category and curated collection pages work the same way: generated only where th
 ## Freshness is a product surface
 
 <Note>
-**Built.** The rules and the automation both exist now. Every published field carries a `last_verified_at` date that only advances on re-confirmation; a per-vendor **source registry** records what backs each field; a scheduled worker re-crawls sources whose cadence says they are due; posture differences become **typed, judged change events**; and the change log, the change feeds and the staleness flags are all public. Watchlist alerts are the one piece still outstanding — they belong to the exchange, and ride on these same change events.
+**Built.** The rules and the automation both exist now. Every published field carries a `last_verified_at` date that only advances on re-confirmation; a per-vendor **source registry** records what backs each field; a scheduled worker re-crawls sources whose cadence says they are due; posture differences become **typed, judged change events**; and the change log, the change feeds and the staleness flags are all public. Watchlists and change alerts ride on these same events, and are built too — only *material* changes alert, with no way to opt into noise.
 </Note>
 
 ### What may advance a date
