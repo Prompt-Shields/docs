@@ -4,9 +4,9 @@ description: "Give-to-get: contribute the assessment you had to run anyway, unlo
 icon: "right-left"
 ---
 
-<Warning>
-**Not yet built.** The free-versus-gated boundary exists in the code, but nothing is gated yet — there is no membership, no contribution intake, and no normalization engine. Everything below is the design.
-</Warning>
+<Note>
+**Built.** Member accounts, contribution intake, normalization and human review, give-to-get unlocking, peer-sharing consent, watchlists and change alerts, and the dated export all exist. The loop closes: contributing earns access, and access is what contributing is for.
+</Note>
 
 The directory is useful on day one because it is analyst-seeded. It becomes hard to replicate because **members contribute the vendor assessments they are already required to run**, and consumption is gated on contribution.
 
@@ -40,7 +40,32 @@ Turning incompatible member paperwork into comparable signal is the defensible c
 | **The mapping** | Model-assisted field mapping from arbitrary input formats, with a confidence score attached per field rather than a silent best guess |
 | **The human loop** | A review and correction queue. Nothing reaches the canonical catalog unreviewed |
 
-Treating this as one task is the most likely way to get it wrong, which is why it is planned as three.
+Treating this as one task is the most likely way to get it wrong, which is why it was built as three.
+
+All three now exist. Two details of the third are worth stating, because they are where the guarantee actually lives:
+
+- **Nothing reaches catalog signals without a named reviewer.** A contribution is publishable only from a confirmed or corrected review state, and the only function that changes that state also writes the record of who changed it and when. There is no path forward that leaves no attribution.
+- **Bulk-accept is not switched on.** It exists, but whether any confidence band has earned it is decided from measured accuracy rather than a chosen constant — and today none has. A threshold picked by intuition would make the whole control theatre, so the refusal is the feature.
+
+## What the gate actually counts
+
+Built, and the details are where the anti-gaming lives.
+
+**Acceptance earns, not upload.** A grant is issued when a contribution has been reviewed and yields at least one usable answer. Tying it to upload would let anyone past the gate with noise, and would make the review queue decorative — so the thing that earns access is the thing that adds value, not the act of sending a file.
+
+Three rules close the obvious holes, each enforced in code rather than by inspection:
+
+| Rule | Why |
+| --- | --- |
+| One grant per contribution | A single upload cannot be counted twice |
+| A re-upload of bytes already contributed earns nothing | Otherwise the same file mints credits indefinitely |
+| A contribution whose every answer was rejected earns nothing | And the member is **told why**, rather than left guessing |
+
+Unlocks expire if unspent. The exchange trades in current assessments, and a credit minted long ago keeps nothing fresh — so an unspent grant ages out, while a report already unlocked stays unlocked.
+
+<Warning>
+**Sharing is never a default.** A contribution is a member's own internal assessment. Sharing it into the exchange is a separate, explicit act about one specific contribution — never bundled into signup, never a consequence of uploading. Consent is recorded with who gave it and when, and withdrawal is recorded the same way, because consent that cannot be shown to have been given is not meaningfully consent.
+</Warning>
 
 ## What "full report" means
 
@@ -69,8 +94,8 @@ Member contributions are private to the member who made them unless explicitly s
 
 ## What members get out of it
 
-- **Full, dated, source-cited due-diligence reports**, exportable for an audit file
-- **Watchlists and change alerts** — notification when a vendor's posture materially changes, riding on the same change events that drive the [profile change log](/ai-vendor-trust-exchange/trust-profiles#freshness-is-a-product-surface)
+- **Full, dated, source-cited due-diligence reports**, exportable for an audit file. Every row carries its source and its verified date: an export that strips provenance is worthless as diligence evidence, because the reader cannot check a single claim in it.
+- **Watchlists and change alerts** — notification when a vendor's posture *materially* changes, riding on the same change events that drive the [profile change log](/ai-vendor-trust-exchange/trust-profiles#freshness-is-a-product-surface). Immaterial changes stay in the public log and out of every inbox; there is no setting that opts into noise.
 - **Questionnaire relief** — an answer that already exists, current, instead of another bespoke round trip
 
 <Card title="Independence" icon="scale-balanced" href="/ai-vendor-trust-exchange/independence">
