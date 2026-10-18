@@ -46,11 +46,16 @@ The only practical place to inspect a prompt is **in the input field, before sub
 | Browser extension | Chrome, Microsoft Edge | 50+ AI and productivity sites |
 | macOS agent | macOS 14 Sonoma or later | Any app, via the Accessibility API |
 | Windows agent | Windows 10 (build 18362+) / Windows 11 | Any app, via UI Automation |
+| Safari extension | *In development* | *In development* |
 
 The browser extension covers the majority of real-world AI usage and is the lightest thing to deploy. The desktop agents extend the same protection to native apps — desktop ChatGPT, Slack, Outlook, Word — that a browser extension cannot reach.
 
+<Warning>
+**Safari is in development and cannot be deployed.** There is no release, no store listing, and no build to install. Its supported platforms and site coverage are not settled, so do not plan Mac coverage around it — today that is the [macOS agent](/deploy/macos-agent), which protects any app including Safari itself.
+</Warning>
+
 <Note>
-These three cover AI that **people** use. AI that your **own services** call — LLM APIs invoked from code, pipelines, and agents — is invisible to all of them. That is covered separately by the [Python SDK and AI Gateway](/developers/overview).
+These clients cover AI that **people** use. AI that your **own services** call — LLM APIs invoked from code, pipelines, and agents — is invisible to all of them. That is covered separately by the [Python SDK and AI Gateway](/developers/overview).
 </Note>
 
 ## Start here
